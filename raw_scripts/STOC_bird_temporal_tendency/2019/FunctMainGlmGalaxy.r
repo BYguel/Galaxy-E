@@ -10,7 +10,7 @@
 ############################################### Function main.glm
 
 main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,tabsp=tabsp,annees=annees,figure=TRUE,description=TRUE,tendanceSurFigure=TRUE, ###### declaration des arguments  listSp=sp était avant declaré avant la fonction mais il me semble que ca marche aussi comme cela
-                     seuilOccu=14,seuilAbond=NA)) {
+                     seuilOccu=14,seuilAbond=NA) {
 
     
 
