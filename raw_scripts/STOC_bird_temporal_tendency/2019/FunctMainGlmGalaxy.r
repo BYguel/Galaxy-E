@@ -2,210 +2,23 @@
 
 
 
-######################################################################################################################
-############## CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION  function:main.glm    ##############################
-######################################################################################################################
-
-#### Based on Romain Lorrillière R script
-#### Modified by Alan Amosse and Benjamin Yguel for integrating within Galaxy-E
-
-library(lme4)
-library(ggplot2)
-library(speedglm)
-library(arm)
-library(ggplot2)
-library(reshape)
-library(data.table)
-library(reshape2)
-
-###########
-#delcaration des arguments et variables/ declaring some variables and load arguments
-
-args = commandArgs(trailingOnly=TRUE)
-
-if (length(args)==0) {
-    stop("At least one argument must be supplied (input file)", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
-} else {
-    Datafilteredfortrendanalysis<-args[1] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"    
-    tabSpecies<-args[2] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
-    id<-args[3]  ##### nom du dossier de sortie des resultats / name of the output folder
-    spExclude <- args [4] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
- AssessIC <-arg [5] ##########  TRUE ou FALSE réalise glm "standard" avec calcul d'intervalle de confiance ou speedglm sans IC / TRUE or FALSE perform a "standard" glm with confidance interval or speedglm without CI 
-}
+##################################################################################################################################
+############## FUNCTION TO CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION  function:main.glm    ##############################
+##################################################################################################################################
 
 
+############################################### Function main.glm
 
+main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,tabsp=tabsp,annees=annees,figure=TRUE,description=TRUE,tendanceSurFigure=TRUE, ###### declaration des arguments  listSp=sp était avant declaré avant la fonction mais il me semble que ca marche aussi comme cela
+                     seuilOccu=14,seuilAbond=NA)) {
 
-#Import des données / Import data 
-tabCLEAN <- read.csv(Datafilteredfortrendanalysis,sep=";",dec=".") #### charge le fichier de données d abondance / load abundance of species
-tabsp <- read.csv(tabSpecies,sep=";",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
-ncol<-as.integer(dim(tab)[2])
-if(ncol<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
-    stop("The file don't have at least 3 variables", call.=FALSE)
-}
-
- firstYear <- min(tabCLEAN$annee) #### Recupère 1ere annee des donnees / retrieve the first year of the dataset
- lastYear <- max(tabCLEAN$annee)  #### Récupère la dernière annee des donnees / retrieve the last year of the dataset
- annees <- firstYear:lastYear  ##### !!!! une autre variable s'appelle annee donc peut être à modif en "periode" ? ### argument de la fonction mais  DECLARER DANS LA FONCTION AUSSI donc un des 2 à supprimer
-
-spsFiltre=unique(levels(tabCLEAN[,3])) #### Recupère la liste des especes du tabCLEAN qui ont été sélectionnée et qui ont passé le filtre / retrieve species name that were selected and then filtered before
-
-spExclude=subset (tabsp, !(espece %in% spsFiltre)) #### liste des espèces exclu par le filtre ou manuellement / List of species excluded manually or by the filter from the analyses 
-tabsp=subset (tabsp, (espece %in% spsFiltre)) #### Enlève les espèces qui n'ont pas passé le filtre ou exclu manuellement pour les analyses / keep only selected species and species with enough data
-sp=as.character(tabsp$espece)  ##### liste des espece en code ou abbreviation gardées pour les analyses ### arg de la fonction  DECLARE AUSSI APRES DS FONCTION  / list of the code or abbreviation of the species kept for the analyses
-
-
-
-
-
-###################### POTENTIELLEMENT INTEGRABLE OU A ENLEVER CAR OPERATION N A PLUS RAISON D ETRE ICI ELLE EST FAIT AU TOUT DEBUT PAR LES 2 SCRIPTS AVANT
-    if(!is.null(spExclude)) {   ########################### Exclusion des sps se trouvant dans une liste choisie par utilisateur  !!!!!! Ne sait pas si doit être intégré à la fonction ou sortie de celle ci comme c'était le cas avant,
-                                ##### si c'est le cas alors il faut rajouter un argument à la fonction ci dessous : ,spExclude=NULL
-                                        # browser()
-        #dataCLEAN <- subset(tabCLEAN,!(espece %in% spExclude)) ## pas besoin car sont déjà exclu de base 
-        tabsp <- subset(tabsp, !(espece %in% spExclude))
-
-    }
-	################## FIN DU POTENTIELLEMENT INTEGRABLE OU A ENLEVER
-	
-## fonction general de calcul de la variation temporelle et de la tendance generale
-## la fonction genere aussi les graphiques
-
-main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,tabsp=tabsp,annees=annees,figure=TRUE,description=TRUE,tendanceSurFigure=TRUE,tendanceGroupSpe = FALSE, ###### declaration des arguments  listSp=sp était avant declaré avant la fonction mais il me semble que ca marche aussi comme cela
-                     seuilOccu=14,seuilAbond=NA,ecritureStepByStep=FALSE,spExcluPassage1=c("MOTFLA","SAXRUB","OENOEN","ANTPRA","PHYTRO")) {   #################  ici peut être à rajouter de spExclude qui se trouvait dans la fonction regroupant celle ci
-                                                                                                                                      #########  j'ai rajouté arguments de la fonction qui englobait cette fonction: spExcluPassage1
-    ##  donneesAll=data;listSp=sp;annees=firstYear:lastYear;figure=TRUE;description=TRUE;tendanceSurFigure=TRUE;tendanceGroupSpe = FALSE;
-    ##                   seuilOccu=14;seuilAbond=NA;ecritureStepByStep=TRUE
     
 
-
-
-
-
-###########################################################################################################  fonction renvoyant la categorie European Bird Census Council en fonction des resultats des modèles
-## renvoie la categorie EBCC de la tendance en fonction
-## trend l'estimateur de la tendance
-## pVal la p value
-## ICinf ICsup l intervalle de confiance a 95 pourcent
-affectCatEBCC <- function(trend,pVal,ICinf,ICsup){
-  catEBCC <- ifelse(pVal>0.05,
-                    ifelse(ICinf < 0.95 | ICsup > 1.05,"Incertain","Stable"),
-                    ifelse(trend<1,
-                           ifelse(ICsup<0.95,"Fort dÃ©clin","DÃ©clin modÃ©rÃ©"),
-                           ifelse(ICinf>1.05,"Forte augmentation","Augmentation modÃ©rÃ©e")))
-  return(catEBCC)
-}
-
-############################################################################################################ fin de la fonction renvoyant la categorie EBCC
-
-
-
-
-
-
-############################################################################################################ fonction graphique / function for graphical output
-ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,description=TRUE,
-                          tendanceSurFigure=TRUE,seuilOccu=14, vpan) {
-  
-  #  serie=NULL;nomSp=NULL;description=TRUE;valide=catIncert
-  #  tendanceSurFigure=TRUE;seuilOccu=14
-  require(ggplot2)
-  
-  figname<- paste("Output/",id,"/",ifelse(valide=="Incertain","Incertain/",""),
-                  sp,"_",id,serie, ".png",
-                  sep = "")
-  ## coordonnÃ©e des ligne horizontal de seuil pour les abondances et les occurences
-  hline.data1 <- data.frame(z = c(1), panel = c(vpan[1]),couleur = "variation abondance",type="variation abondance")
-  hline.data2 <- data.frame(z = c(0,seuilOccu), panel = c(vpan[2],vpan[2]),couleur = "seuil",type="seuil")
-  hline.data3 <- data.frame(z = 0, panel = vpan[3] ,couleur = "seuil",type="seuil")  
-  hline.data <- rbind(hline.data1,hline.data2,hline.data3)
-  titre <- paste(nomSp)#,"\n",min(annee)," - ",max(annee),sep="")
-  
-  ## texte de la tendance / text for the population evolution trend
-  tab1 <- subset(dgg,panel =="Variation abondance")
-  pasdetemps <- max(dgg$annee) - min(dgg$annee) + 1
-  txtPente1 <- paste(tab1t$Est,
-                     ifelse(tab1t$signif," *",""),"  [",tab1t$LL," , ",tab1t$UL,"]",
-                     ifelse(tab1t$signif,paste("\n",ifelse(tab1t$pourcent>0,"+ ","- "),
-                                               abs(tab1t$pourcent)," % en ",pasdetemps," ans",sep=""),""),sep="")
-  ## table du texte de la tendance / table of the text for the population evolution trend
-  tabTextPent <- data.frame(y=c(max(c(tab1$val,tab1$UL),na.rm=TRUE)*.9),
-                            x=median(tab1$annee),
-                            txt=ifelse(tendanceSurFigure,c(txtPente1),""),
-                            courbe=c(vpan[1]),panel=c(vpan[1]))
-  ## les couleurs / the colors
-  vecColPoint <- c("#ffffff","#eeb40f","#ee0f59")
-  names(vecColPoint) <- c("significatif","infSeuil","0")
-  vecColCourbe <- c("#3c47e0","#5b754d","#55bb1d","#973ce0")
-  names(vecColCourbe) <- c(vpan[1],"carre","presence",vpan[3])
-  vecColHline <- c("#ffffff","#e76060")
-  names(vecColHline) <- c("variation abondance","seuil")
-  
-  col <- c(vecColPoint,vecColCourbe,vecColHline)
-  names(col) <- c(names(vecColPoint),names(vecColCourbe),names(vecColHline))
-  
-  ## si description graphique en 3 panels
-  if(description) {
-    p <- ggplot(data = dgg, mapping = aes(x = annee, y = val))
-    ## Titre, axes ...
-    p <- p + facet_grid(panel ~ ., scale = "free") +
-      theme(legend.position="none",
-            panel.grid.minor=element_blank(),
-            panel.grid.major.y=element_blank())  +
-      ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) +
-      scale_colour_manual(values=col, name = "" ,
-                          breaks = names(col))+
-      scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
-    p <- p + geom_hline(data =hline.data,mapping = aes(yintercept=z, colour = couleur,linetype=type ),
-                        alpha=1,size=1.2)
-    
-    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
-    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
-    p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
-    p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
-    p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
-    p <-  p + geom_text(data=tabTextPent, mapping=aes(x,y,label=txt),parse=FALSE,color=col[vpan[1]],fontface=2, size=4)
-    ggsave(figname, p,width=16,height=21, units="cm")
-  } else {
-    
-    p <- ggplot(data = subset(dgg,panel=="Variation abondance"), mapping = aes(x = annee, y = val))
-    ## Titre, axes ...
-    p <- p + facet_grid(panel ~ ., scale = "free") +
-      theme(legend.position="none",
-            panel.grid.minor=element_blank(),
-            panel.grid.major.y=element_blank())  +
-      ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) +
-      scale_colour_manual(values=col, name = "" ,
-                          breaks = names(col))+
-      scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
-    p <- p + geom_hline(data =subset(hline.data,panel=="Variation abondance"),mapping = aes(yintercept=z, colour = couleur,linetype=type ),
-                        alpha=1,size=1.2)
-    
-    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
-    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
-    p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
-    p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
-    p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
-    p <-  p + geom_text(data=tabTextPent, mapping=aes(x,y,label=txt),parse=FALSE,color=col[vpan[1]],fontface=2, size=4)
-    ggsave(figname, p,width=15,height=9,units="cm")
-  }
-}
-############################################################################################################ fin fonction graphique / end of function for graphical output
-
-
-
-############ J AI ENLEVE LA SORTIE DANS UN DOSSIER A CREER ET IL SORT CELA DANS LE DOSSIER OU EST LANCE L ANALYSE COMME POUR LES PRECEDENTES FONCTIONS
-
-    filesaveAn <-  paste("variationsAnnuellesEspece_",id,".csv",  ##### Nom du fichier de sortie des resultats par année / name of the output file with results for each years
+    filesaveAn <-  paste("Output/",id,"/variationsAnnuellesEspece_",id,".csv",  ##### Nom du dossier ET fichier de sortie des resultats par année / name of the output file with results for each years
                          sep = "")
-						 #filesaveAn <-  paste("Output/",id,"/variationsAnnuellesEspece_",id,".csv",  ##### Nom du dossier ET fichier de sortie des resultats par année / name of the output file with results for each years
-                         #sep = "")
-    filesaveTrend <-  paste("tendanceGlobalEspece_",id,".csv",   ##### Nom du fichier de sortie des resultats pour la période "annee" complete / name of the output file with the results for the period
+    filesaveTrend <-  paste("Output/",id,"/tendanceGlobalEspece_",id,".csv",   ##### Nom du dossier ET fichier de sortie des resultats pour la période "annee" complete / name of the output file with the results for the period
                             sep = "")
-						 #filesaveTrend <-  paste("Output/",id,"/tendanceGlobalEspece_",id,".csv",   ##### Nom du dossier ET fichier de sortie des resultats pour la période "annee" complete / name of the output file with the results for the period
-                           # sep = "")
-    fileSaveGLMs <-  paste("listGLM_",id,sep = "")  #####  Nom du fichier de sortie des modèles lineaire generalisés / name of the output file of the generlized linear models
-	                     #fileSaveGLMs <-  paste("Output/",id,"/listGLM_",id,sep = "")  #####  Nom du dossier ET fichier de sortie des modèles lineaire generalisés / name of the output file of the generlized linear models
+    fileSaveGLMs <-  paste("Output/",id,"/listGLM_",id,sep = "")  #####  Nom du dossier ET fichier de sortie des modèles lineaire generalisés / name of the output file of the generlized linear models
 
 
     
@@ -219,7 +32,7 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     ##vpan vecteur des panels de la figure  ###### POUR FAIRE LES GRAPHIQUES
     vpan <- c("Variation abondance")
     if(description) vpan <- c(vpan,"Occurrences","Abondances brutes")
-                                        # nomfile1 <- paste("Donnees/carre2001-2014REGION_",id,".csv",sep="")   ##### PAS SUR QUE CE SOIT UTILE
+                                        
 
     ## specifications des variables temporelles necesaires pour les analyses / specification of temporal variable necessary for the analyses
     annee <- sort(unique(donneesAll$annee))
@@ -228,8 +41,6 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     firstY <- min(annee)
     lastY <- max(annee)
 	
-	listSp <- sp                  ###### COMPRENDS PAS CAR C UN ARGUMENT DE LA FONCTION DONC FAUT PAS LE DECLARER AVANT ? ET IL ETAIT DECLARE AUSSI AVANT DANS LA FONCTION D ORIGINE (c déclaré aussi avant mais sinon à supprimer)
-    annees <- firstYear:lastYear  ###### COMPRENDS PAS CAR C UN ARGUMENT DE LA FONCTION DONC FAUT PAS LE DECLARER AVANT ? (c déclaré avant aussi mais sinon à supprimer)
 	
 	
 	
@@ -467,23 +278,14 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
             
         }
         
-        if(ecritureStepByStep) {  ################  A PRIORI PAS UTILE
-
-            write.csv2(glmAn,filesaveAn,row.names=FALSE,quote=FALSE)
-            cat("--->",filesaveAn,"\n")
-            write.csv2(glmTrend,filesaveTrend,row.names=FALSE,quote=FALSE)
-            cat("--->",filesaveTrend,"\n")
-            
-            flush.console()
-
-        }########### FIN A PRIORI PAS UTILE
+        
         
         
     }
     
-    write.csv(glmAn,filesaveAn,row.names=FALSE,quote=FALSE)
+    write.csv(glmAn,filesaveAn,row.names=FALSE,quote=FALSE,sep="	",dec=".")
     cat("--->",filesaveAn,"\n")
-    write.csv(glmTrend,filesaveTrend,row.names=FALSE,quote=FALSE)
+    write.csv(glmTrend,filesaveTrend,row.names=FALSE,quote=FALSE,sep="	",dec=".")
     cat("--->",filesaveTrend,"\n")
     
     
@@ -492,16 +294,132 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     
     
 }
-
-
-################## 
-###  Do your analysis
-
-main.glm(donneesAll=dataCLEAN,tabsp=tabsp)
+########################################################################################################## Fin de la fonction main.glm / end of the function main.glm
 
 
 
- 
 
- 
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################################################  fonction appelée par main.glm renvoyant la categorie European Bird Census Council en fonction des resultats des modèles  / function called by main.glm to classify results depending on the quality of the data and analyses
+## renvoie la categorie EBCC de la tendance en fonction
+## trend l'estimateur de la tendance / estimation of the trends
+## pVal la p value
+## ICinf ICsup l intervalle de confiance a 95 pourcent
+affectCatEBCC <- function(trend,pVal,ICinf,ICsup){
+  catEBCC <- ifelse(pVal>0.05,
+                    ifelse(ICinf < 0.95 | ICsup > 1.05,"Incertain","Stable"),
+                    ifelse(trend<1,
+                           ifelse(ICsup<0.95,"Fort dÃ©clin","DÃ©clin modÃ©rÃ©"),
+                           ifelse(ICinf>1.05,"Forte augmentation","Augmentation modÃ©rÃ©e")))
+  return(catEBCC)
+}
+
+############################################################################################################ fin de la fonction renvoyant la categorie EBCC / end of the function main.glm
+
+
+
+
+
+
+
+
+############################################################################################################ fonction graphique appelée par main.glm / function called by main.glm for graphical output
+ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,description=TRUE,
+                          tendanceSurFigure=TRUE,seuilOccu=14, vpan) {
+  
+  #  serie=NULL;nomSp=NULL;description=TRUE;valide=catIncert
+  #  tendanceSurFigure=TRUE;seuilOccu=14
+  require(ggplot2)
+  
+  figname<- paste("Output/",id,"/",ifelse(valide=="Incertain","Incertain/",""),
+                  sp,"_",id,serie, ".png",
+                  sep = "")
+  ## coordonnÃ©e des ligne horizontal de seuil pour les abondances et les occurences
+  hline.data1 <- data.frame(z = c(1), panel = c(vpan[1]),couleur = "variation abondance",type="variation abondance")
+  hline.data2 <- data.frame(z = c(0,seuilOccu), panel = c(vpan[2],vpan[2]),couleur = "seuil",type="seuil")
+  hline.data3 <- data.frame(z = 0, panel = vpan[3] ,couleur = "seuil",type="seuil")  
+  hline.data <- rbind(hline.data1,hline.data2,hline.data3)
+  titre <- paste(nomSp)#,"\n",min(annee)," - ",max(annee),sep="")
+  
+  ## texte de la tendance / text for the population evolution trend
+  tab1 <- subset(dgg,panel =="Variation abondance")
+  pasdetemps <- max(dgg$annee) - min(dgg$annee) + 1
+  txtPente1 <- paste(tab1t$Est,
+                     ifelse(tab1t$signif," *",""),"  [",tab1t$LL," , ",tab1t$UL,"]",
+                     ifelse(tab1t$signif,paste("\n",ifelse(tab1t$pourcent>0,"+ ","- "),
+                                               abs(tab1t$pourcent)," % en ",pasdetemps," ans",sep=""),""),sep="")
+  ## table du texte de la tendance / table of the text for the population evolution trend
+  tabTextPent <- data.frame(y=c(max(c(tab1$val,tab1$UL),na.rm=TRUE)*.9),
+                            x=median(tab1$annee),
+                            txt=ifelse(tendanceSurFigure,c(txtPente1),""),
+                            courbe=c(vpan[1]),panel=c(vpan[1]))
+  ## les couleurs / the colors
+  vecColPoint <- c("#ffffff","#eeb40f","#ee0f59")
+  names(vecColPoint) <- c("significatif","infSeuil","0")
+  vecColCourbe <- c("#3c47e0","#5b754d","#55bb1d","#973ce0")
+  names(vecColCourbe) <- c(vpan[1],"carre","presence",vpan[3])
+  vecColHline <- c("#ffffff","#e76060")
+  names(vecColHline) <- c("variation abondance","seuil")
+  
+  col <- c(vecColPoint,vecColCourbe,vecColHline)
+  names(col) <- c(names(vecColPoint),names(vecColCourbe),names(vecColHline))
+  
+  ## si description graphique en 3 panels
+  if(description) {
+    p <- ggplot(data = dgg, mapping = aes(x = annee, y = val))
+    ## Titre, axes ...
+    p <- p + facet_grid(panel ~ ., scale = "free") +
+      theme(legend.position="none",
+            panel.grid.minor=element_blank(),
+            panel.grid.major.y=element_blank())  +
+      ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) +
+      scale_colour_manual(values=col, name = "" ,
+                          breaks = names(col))+
+      scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
+    p <- p + geom_hline(data =hline.data,mapping = aes(yintercept=z, colour = couleur,linetype=type ),
+                        alpha=1,size=1.2)
     
+    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
+    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
+    p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
+    p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
+    p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
+    p <-  p + geom_text(data=tabTextPent, mapping=aes(x,y,label=txt),parse=FALSE,color=col[vpan[1]],fontface=2, size=4)
+    ggsave(figname, p,width=16,height=21, units="cm")
+	print (figname)  ##### CAN BE REMOVED IF YOU DO NOT WANT THE GRAPH TO BE PLOTTED
+  } else {
+    
+    p <- ggplot(data = subset(dgg,panel=="Variation abondance"), mapping = aes(x = annee, y = val))
+    ## Titre, axes ...
+    p <- p + facet_grid(panel ~ ., scale = "free") +
+      theme(legend.position="none",
+            panel.grid.minor=element_blank(),
+            panel.grid.major.y=element_blank())  +
+      ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) +
+      scale_colour_manual(values=col, name = "" ,
+                          breaks = names(col))+
+      scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
+    p <- p + geom_hline(data =subset(hline.data,panel=="Variation abondance"),mapping = aes(yintercept=z, colour = couleur,linetype=type ),
+                        alpha=1,size=1.2)
+    
+    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
+    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
+    p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
+    p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
+    p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
+    p <-  p + geom_text(data=tabTextPent, mapping=aes(x,y,label=txt),parse=FALSE,color=col[vpan[1]],fontface=2, size=4)
+    ggsave(figname, p,width=15,height=9,units="cm")
+  print (figname) ##### CAN BE REMOVED IF YOU DO NOT WANT THE GRAPH TO BE PLOTTED
+  }
+}
+############################################################################################################ fin fonction graphique / end of function for graphical output
