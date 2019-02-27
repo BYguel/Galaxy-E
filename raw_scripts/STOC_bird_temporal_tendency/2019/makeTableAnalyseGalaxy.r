@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+﻿#!/usr/bin/env Rscript
 
 ##################################################################################################################
 ################  Data transformation for population evolution trend analyses  function:makeTableAnalyse #########
@@ -22,7 +22,7 @@ if (length(args)==0) {
 
 
 #Import des données / Import data 
-data<- read.csv(ImportduSTOC,sep="\t",dec=".") #  
+data<- read.table(ImportduSTOC,sep="\t",dec=".") #  
 if(ncol(data)<4){ #Verifiction de la présence mini de 4 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 4 columns in the file if not = error message
     stop("The file don't have at least 4 variables", call.=FALSE)
 }
@@ -47,8 +47,8 @@ makeTableAnalyse <- function(data) {
 #Do your analysis
 tableAnalyse<-makeTableAnalyse(data) #la fonction a un 'return' il faut donc stocker le resultat dans une nouvelle variable
 
-#save the data in a output file in a csv format
-filename <- "Datatransformedforfiltering_trendanalysis.csv"
+#save the data in a output file in a tabular format
+filename <- "Datatransformedforfiltering_trendanalysis.tabular"
 write.table(tableAnalyse, filename,row.names=FALSE,sep="\t",dec=".")
 
 cat('exit\n')
