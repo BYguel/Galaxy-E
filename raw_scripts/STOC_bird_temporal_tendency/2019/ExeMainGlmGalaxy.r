@@ -32,7 +32,7 @@ if (length(args)==0) {
 }
 
 
-## creation d'un dossier pour y mettre les resultats
+## creation d'un dossier pour y mettre les resultats / create folder for the output of the analyses
 
 dir.create(paste("Output/",id,sep=""),recursive=TRUE,showWarnings=FALSE)
 cat(paste("Create Output/",id,"\n",sep=""))
@@ -41,8 +41,8 @@ cat(paste("Create Output/",id,"Incertain/\n",sep=""))
 
 
 #Import des données / Import data 
-tabCLEAN <- read.csv(Datafilteredfortrendanalysis,sep="\t",dec=".") #### charge le fichier de données d abondance / load abundance of species
-tabsp <- read.csv(tabSpecies,sep="\t",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
+tabCLEAN <- read.table(Datafilteredfortrendanalysis,sep="\t",dec=".") #### charge le fichier de données d abondance / load abundance of species
+tabsp <- read.table(tabSpecies,sep="\t",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
 ncol<-as.integer(dim(tabCLEAN)[2])
 if(ncol<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
     stop("The file don't have at least 3 variables", call.=FALSE)
