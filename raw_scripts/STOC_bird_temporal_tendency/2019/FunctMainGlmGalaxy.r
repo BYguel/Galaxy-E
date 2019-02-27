@@ -283,9 +283,9 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
         
     }
     
-    write.csv(glmAn,filesaveAn,row.names=FALSE,quote=FALSE,sep="	",dec=".")
+    write.table(glmAn,filesaveAn,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
     cat("--->",filesaveAn,"\n")
-    write.csv(glmTrend,filesaveTrend,row.names=FALSE,quote=FALSE,sep="	",dec=".")
+    write.table(glmTrend,filesaveTrend,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
     cat("--->",filesaveTrend,"\n")
     
     

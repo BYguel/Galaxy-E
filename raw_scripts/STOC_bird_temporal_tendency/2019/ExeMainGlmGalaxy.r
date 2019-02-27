@@ -9,15 +9,13 @@
 #### Based on Romain Lorrillière R script
 #### Modified by Alan Amosse and Benjamin Yguel for integrating within Galaxy-E
 
-library(lme4)
-library(ggplot2)
-library(speedglm)
-library(arm)
-library(ggplot2)
-library(reshape)
-library(data.table)
-library(reshape2)
-
+suppressMessages(library(lme4))
+suppressMessages(library(ggplot2))
+suppressMessages(library(speedglm))
+suppressMessages(library(arm))
+suppressMessages(library(reshape))
+suppressMessages(library(data.table))
+suppressMessages(library(reshape2))
 ###########
 #delcaration des arguments et variables/ declaring some variables and load arguments
 
@@ -30,21 +28,21 @@ if (length(args)==0) {
     tabSpecies<-args[2] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
     id<-args[3]  ##### nom du dossier de sortie des resultats / name of the output folder
     spExclude <- args [4] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
- AssessIC <-arg [5] ##########  TRUE ou FALSE réalise glm "standard" avec calcul d'intervalle de confiance ou speedglm sans IC bien plus rapide / TRUE or FALSE perform a "standard" glm with confidance interval or speedglm without CI much more fast
+    AssessIC <-args [5] ##########  TRUE ou FALSE réalise glm "standard" avec calcul d'intervalle de confiance ou speedglm sans IC bien plus rapide / TRUE or FALSE perform a "standard" glm with confidance interval or speedglm without CI much more fast
 }
 
 
 ## creation d'un dossier pour y mettre les resultats
 
-dir.create(paste("Output/",id,sep=""),recursive=TRUE)
+dir.create(paste("Output/",id,sep=""),recursive=TRUE,showWarnings=FALSE)
 cat(paste("Create Output/",id,"\n",sep=""))
-dir.create(paste("Output/",id,"/Incertain/",sep=""),recursive=TRUE)
+dir.create(paste("Output/",id,"/Incertain/",sep=""),recursive=TRUE,showWarnings=FALSE)
 cat(paste("Create Output/",id,"Incertain/\n",sep=""))
 
 
 #Import des données / Import data 
-tabCLEAN <- read.csv(Datafilteredfortrendanalysis,sep="	",dec=".") #### charge le fichier de données d abondance / load abundance of species
-tabsp <- read.csv(tabSpecies,sep="	",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
+tabCLEAN <- read.csv(Datafilteredfortrendanalysis,sep="\t",dec=".") #### charge le fichier de données d abondance / load abundance of species
+tabsp <- read.csv(tabSpecies,sep="\t",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
 ncol<-as.integer(dim(tabCLEAN)[2])
 if(ncol<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
     stop("The file don't have at least 3 variables", call.=FALSE)
@@ -66,7 +64,7 @@ source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
 ################## 
 ###  Do your analysis
 
-main.glm(donneesAll=dataCLEAN,tabsp=tabsp)
+main.glm(donneesAll=tabCLEAN,tabsp=tabsp)
 
 
 
