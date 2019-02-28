@@ -26,7 +26,7 @@ if (length(args)==0) {
 
 
 #Import des données / Import data 
-tab <- read.table(Datatransformedforfiltering_trendanalysis,sep="\t",dec=".") #  
+tab <- read.table(Datatransformedforfiltering_trendanalysis,sep="\t",dec=".",header=TRUE) #  
 
 
 if(ncol(tab)<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
