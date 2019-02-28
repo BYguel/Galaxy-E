@@ -27,7 +27,7 @@ if (length(args)==0) {
     Datafilteredfortrendanalysis<-args[1] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"    
     tabSpecies<-args[2] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
     id<-args[3]  ##### nom du dossier de sortie des resultats / name of the output folder
-    spExclude <- args [4] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
+    spExclude <- strsplit(args [4],",")[[1]] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
     AssessIC <-args [5] ##########  TRUE ou FALSE réalise glm "standard" avec calcul d'intervalle de confiance ou speedglm sans IC bien plus rapide / TRUE or FALSE perform a "standard" glm with confidance interval or speedglm without CI much more fast
 }
 
@@ -48,16 +48,29 @@ if(ncol<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas
     stop("The file don't have at least 3 variables", call.=FALSE)
 }
 
- firstYear <- min(tabCLEAN$annee) #### Recupère 1ere annee des donnees / retrieve the first year of the dataset
- lastYear <- max(tabCLEAN$annee)  #### Récupère la dernière annee des donnees / retrieve the last year of the dataset
- annees <- firstYear:lastYear  ##### !!!! une autre variable s'appelle annee donc peut être à modif en "periode" ? ### argument de la fonction mais  DECLARER DANS LA FONCTION AUSSI donc un des 2 à supprimer
+firstYear <- min(tabCLEAN$annee) #### Recupère 1ere annee des donnees / retrieve the first year of the dataset
+lastYear <- max(tabCLEAN$annee)  #### Récupère la dernière annee des donnees / retrieve the last year of the dataset
+annees <- firstYear:lastYear  ##### !!!! une autre variable s'appelle annee donc peut être à modif en "periode" ? ### argument de la fonction mais  DECLARER DANS LA FONCTION AUSSI donc un des 2 à supprimer
 
 spsFiltre=unique(levels(tabCLEAN[,3])) #### Recupère la liste des especes du tabCLEAN qui ont été sélectionnée et qui ont passé le filtre / retrieve species name that were selected and then filtered before
-
-spExclude=subset (tabsp, !(espece %in% spsFiltre)) #### liste des espèces exclu par le filtre ou manuellement / List of species excluded manually or by the filter from the analyses 
-tabsp=subset (tabsp, (espece %in% spsFiltre)) #### Enlève les espèces qui n'ont pas passé le filtre ou exclu manuellement pour les analyses / keep only selected species and species with enough data
+#cat("\n\nspsFiltre\n")
+#print(spsFiltre)
+tabsp=subset (tabsp, (espece %in% spsFiltre)) #### liste des espèces exclu par le filtre ou manuellement / List of species excluded manually or by the filter from the analyses 
+#cat("\n\ntabsp\n")
+#print(tabsp)
 sp=as.character(tabsp$espece)  ##### liste des espece en code ou abbreviation gardées pour les analyses ### arg de la fonction  DECLARE AUSSI APRES DS FONCTION  / list of the code or abbreviation of the species kept for the analyses
+#cat("\n\nsp\n")
+#print(sp)
 
+cat("\n\nEspèces exclues de l'analyse :\n")
+cat(spExclude)
+cat("\n")
+if(!is.null(spExclude)) {
+    tabCLEAN <- subset(tabCLEAN,!(espece %in% spExclude))
+    tabsp <- subset(tabsp, !(espece %in% spExclude))
+}
+#cat("\n\ntabsp\n")
+#print(tabsp)
 
 source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
 
