@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-
+source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
 ##################################################################################################################
 ################  Data transformation for population evolution trend analyses  function:makeTableAnalyse #########
 ##################################################################################################################
@@ -10,7 +10,7 @@
 args = commandArgs(trailingOnly=TRUE) #####   par defaut prends les arguments comme du texte !!!! / default behaviour is to take the arguments as text !!!
 
 if (length(args)==0) {
-    stop("At least one argument must be supplied (input file)", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
+    stop("At least one argument must be supplied, an input dataset file (.tabular).", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
 
 } else {
     ImportduSTOC<-args[1] ###### Nom du fichier importé depuis la base de données STOCeps avec son extension / file name imported from the STOCeps database with the file type ".filetype"    
@@ -23,9 +23,10 @@ if (length(args)==0) {
 
 #Import des données / Import data 
 data<- read.table(ImportduSTOC,sep="\t",dec=".",header=TRUE) # 
-if(ncol(data)<4){ #Verifiction de la présence mini de 4 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 4 columns in the file if not = error message
-    stop("The file don't have at least 4 variables", call.=FALSE)
-}
+vars_data<-c("carre","annee","espece","abond")
+err_msg_data<-"The input dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- carre\n- annee\n- espece\n- abond\n"
+check_file(data,err_msg_data,vars_data,4)
+
 
 ## mise en colonne des especes  et rajout de zero mais sur la base des carrés selectionné sans l'import  /  Species are placed in separated columns and addition of zero on plots where at least one selected species is present 
 

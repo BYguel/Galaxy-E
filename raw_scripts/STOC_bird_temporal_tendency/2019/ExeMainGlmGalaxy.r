@@ -1,7 +1,5 @@
 #!/usr/bin/env Rscript
 
-
-
 ######################################################################################################################################
 ############## COMMAND LINE TO CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION  function:main.glm    ##############################
 ######################################################################################################################################
@@ -16,13 +14,17 @@ suppressMessages(library(arm))
 suppressMessages(library(reshape))
 suppressMessages(library(data.table))
 suppressMessages(library(reshape2))
+
+source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
+
+
 ###########
 #delcaration des arguments et variables/ declaring some variables and load arguments
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args)==0) {
-    stop("At least one argument must be supplied (input file)", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
+if (length(args)!=5) {
+    stop("At least 5 arguments must be supplied :\n- An input dataset filtered (.tabular). May come from the filter rare species tool.\n- A species detail table (.tabular)\n- An id to fix output repository name.\n- A list of species to exclude, can be empty.\n- TRUE/FALSE to perform the glm with confidence intervals calculations.\n\n", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
 } else {
     Datafilteredfortrendanalysis<-args[1] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"    
     tabSpecies<-args[2] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
@@ -43,10 +45,17 @@ cat(paste("Create Output/",id,"Incertain/\n",sep=""))
 #Import des données / Import data 
 tabCLEAN <- read.table(Datafilteredfortrendanalysis,sep="\t",dec=".",header=TRUE) #### charge le fichier de données d abondance / load abundance of species
 tabsp <- read.table(tabSpecies,sep="\t",dec=".",header=TRUE)   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
-ncol<-as.integer(dim(tabCLEAN)[2])
-if(ncol<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
-    stop("The file don't have at least 3 variables", call.=FALSE)
-}
+
+vars_tabCLEAN<-c("carre","annee","espece","abond")
+err_msg_tabCLEAN<-"The input dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- carre\n- annee\n- espece\n- abond\n"
+
+vars_tabsp<-c("espece","nom","nomscientific","indicateur","specialisation")
+err_msg_tabsp<-"\nThe species dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- espece\n- nom\n- nomscientific\n- indicateur\n- specialisation\n"
+
+check_file(tabCLEAN,err_msg_tabCLEAN,vars_tabCLEAN,4)
+check_file(tabsp,err_msg_tabsp,vars_tabsp,5)
+
+
 
 firstYear <- min(tabCLEAN$annee) #### Recupère 1ere annee des donnees / retrieve the first year of the dataset
 lastYear <- max(tabCLEAN$annee)  #### Récupère la dernière annee des donnees / retrieve the last year of the dataset
@@ -72,7 +81,6 @@ if(!is.null(spExclude)) {
 #cat("\n\ntabsp\n")
 #print(tabsp)
 
-source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
 
 ################## 
 ###  Do your analysis
