@@ -423,3 +423,23 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
   }
 }
 ############################################################################################################ fin fonction graphique / end of function for graphical output
+
+
+
+###################################################################################################################
+#General function to check integrity of input file. Will check numbers and contents of variables(colnames). 
+#return an error message and exit if mismatch detected
+#Enter dataset name,  expected number and names of variables. + an exit error message to guide user.
+
+check_file<-function(dataset,err_msg,vars,nb_vars){
+    if(ncol(dataset)!=nb_vars){ #Verifiction de la présence du bon nb de colonnes, si c'est pas le cas= message d'erreur / checking for right number of columns in the file if not = error message
+        cat("\nerr nb var\n") 
+        stop(err_msg, call.=FALSE)
+    }
+
+    for(i in vars){
+        if(!(i %in% names(dataset))){
+            stop(err_msg,call.=FALSE)
+        }
+    }
+}
