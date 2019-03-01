@@ -1,7 +1,5 @@
 #!/usr/bin/env Rscript
 
-
-
 ##################################################################################################################################################
 ############## CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION BY SPECIALIZATION GROUP  function:analyse.Groupe  ##############################
 ##################################################################################################################################################
@@ -18,40 +16,61 @@ suppressMessages(library(reshape))
 suppressMessages(library(data.table))
 suppressMessages(library(reshape2))
 
+check_file<-function(dataset,err_msg,vars,nb_vars){
+    if(ncol(dataset)!=nb_vars){ #Verifiction de la présence du bon nb de colonnes, si c'est pas le cas= message d'erreur / checking for right number of columns in the file if not = error message
+        cat("\nerr nb var\n") 
+        stop(err_msg, call.=FALSE)
+    }
+
+    for(i in vars){
+        if(!(i %in% names(dataset))){
+            stop(err_msg,call.=FALSE)
+        }
+    }
+}
+
 ###########
 #delcaration des arguments et variables/ declaring some variables and load arguments
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args)==0) {
-    stop("At least one argument must be supplied (input file)", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
+if (length(args)!=6) {
+    stop("The tool need the following inputs :\n\n- A yearly species variations data set (.tabular). It may come from the main glm tool.\n- A species global tendencies dataset (.tabular). It may come from the main glm tool.\n- A species table filtered (.tabular). It may come from the Filter rare species tool.\n- An id to fix output repository name.\n- A list of species to exclude, can be empty.\n- A bias file.\n\n", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
 } else {
     donnees<-args[1] ###### Nom du fichier avec extension "***variationsAnnuellesEspece***.tabular", peut provenir de la fonction "mainglm" / file name without the file type "***variationsAnnuellesEspece***.tabular", may result from the function "mainglm"    
     donneesTrend <- args[2] ####### Nom du fichier avec extension "***tendanceGlobalEspece***.tabular", peut provenir de la fonction "mainglm" / / file name without the file type "***tendanceGlobalEspece***.tabular", may result from the function "mainglm"    
-	tabSpecies<-args[3] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
+    tabSpecies<-args[3] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
     id<-args[4]  ##### nom du dossier de sortie des resultats / name of the output folder
     spExclude <- args [5] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
- tBiais <-args [6] ##########   fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / the file containing the detection bias depending on occurance data obtained with theoretical model of population dynamic and survey
- 
+    tBiais <-args [6] ##########   fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / the file containing the detection bias depending on occurance data obtained with theoretical model of population dynamic and survey
 }
 
 
 
 
 #Import des données / Import data 
-tBiais=read.table(tBiais,sep="\t",dec=".") ###### charge le fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / load the file containing the detection bias obtained with theoretical model of population dynamic and survey
-donnees <-  read.table(donnees,sep="\t",dec=".") #### charge le fichier de resultat sur les tendances annuelles par espèce / load annual population evolution trend for each species obtained with the function mainglm
-donneesTrend <- read.table(donneesTrend,sep="\t",dec=".")#### charge le fichier de resultat sur les tendances sur la periode etudiée par espèce / load population evolution trend on the studied period for each species obtained with the function mainglm
-tabsp <- read.table(tabSpecies,sep="\t",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
-ncol<-as.integer(dim(donnees)[2])
-if(ncol<14){ #Verifiction de la présence mini de 14 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
-    stop("The file don't have at least 14 variables", call.=FALSE)
-}
+tBiais=read.table(tBiais,sep="\t",dec=".",header=TRUE) ###### charge le fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / load the file containing the detection bias obtained with theoretical model of population dynamic and survey
+donnees <-  read.table(donnees,sep="\t",dec=".",header=TRUE) #### charge le fichier de resultat sur les tendances annuelles par espèce / load annual population evolution trend for each species obtained with the function mainglm
+donneesTrend <- read.table(donneesTrend,sep="\t",dec=".",header=TRUE)#### charge le fichier de resultat sur les tendances sur la periode etudiée par espèce / load population evolution trend on the studied period for each species obtained with the function mainglm
+tabsp <- read.table(tabSpecies,sep="\t",dec=".",header=TRUE)   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
 
-ncol2<-as.integer(dim(donneesTrend)[2])
-if(ncol2<17){ #Verifiction de la présence mini de 17 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
-    stop("The file don't have at least 17 variables", call.=FALSE)
-}
+
+
+
+vars_donnees<-c("id","code_espece","nom_espece","indicateur","annee","abondance_relative","IC_inferieur","IC_superieur","erreur_standard","p_value","significatif","nb_carre","nb_carre_presence","abondance")
+err_msg_donnees<-"\nThe yearly species variation dataset doesn't have the right format. It need to have following 14 variables :\n- id\n- code_espece\n- nom_espece\n- indicateur\n- annee\n- abondance_relative\n- IC_inferieur\n- IC_superieur\n- erreur_standard\n- p_value\n- significatif\n- nb_carre\n- nb_carre_presence\n- abondance\n"
+
+vars_donneesTrend<-c("id","code_espece","nom_espece","indicateur","nombre_annees","premiere_annee","derniere_annee","tendance","IC_inferieur","IC_superieur","pourcentage_variation","erreur_standard","p_value","significatif","categorie_tendance_EBCC","mediane_occurrence","valide","raison_incertitude")
+err_msg_donneesTrend<-"\nThe species global tendances dataset doesn't have the right format. It need to have following 18 variables :\n- id\n- code_espece\n- nom_espece\n- indicateur\n- nombre_annees\n- premiere_annee\n- derniere_annee\n- tendance\n- IC_inferieur\n- IC_superieur\n- pourcentage_variation\n- erreur_standard\n- p_value\n- significatif\n- categorie_tendance_EBCC\n mediane_occurrence\n valide\n raison_incertitude\n"
+
+vars_tabsp<-c("espece","nom","nomscientific","indicateur","specialisation")
+err_msg_tabsp<-"\nThe species dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- espece\n- nom\n- nomscientific\n- indicateur\n- specialisation\n"
+
+
+check_file(donnees,err_msg_donnees,vars_donnees,14)
+check_file(donneesTrend,err_msg_donneesTrend,vars_donneesTrend,18)
+check_file(tabsp,err_msg_tabsp,vars_tabsp,5)
+
 
 spsFiltre=unique(levels(donnees$code_espece)) #### Recupère la liste des especes du tabCLEAN qui ont été sélectionnée et qui ont passé le filtre / retrieve species name that were selected and then filtered before
 
@@ -71,7 +90,6 @@ cat(paste("Create Output/",id,"Incertain/\n",sep=""))
 
 
 
-
 ## Analyse par groupe de specialisation Ã  partir des resulats de variation d'abondance par especes
 ## id identifiant de la session
 ## ICfigureGroupeSp affichage des intervalles de confiances sur la figure
@@ -81,10 +99,6 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
                           groupeNom = c("generaliste","milieux batis","milieux forestiers","milieux agricoles"),
                           groupeCouleur = c("black","firebrick3","chartreuse4","orange")) {
     
-    
-
-
-
     ## donnees tendances globales
     donneesTrend <- subset(donneesTrend, select = c(code_espece,valide,mediane_occurrence))
 	
@@ -217,12 +231,6 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
 
 
 
-
-
-
-
 ################## 
 ###  Do your analysis
-
-
 analyseGroupe(id,tabsp=tabsp,donnees=donnees,donneesTrend=donneesTrend,ICfigureGroupeSp=TRUE,groupeNom = groupeNom,groupeCouleur=groupeCouleur)
