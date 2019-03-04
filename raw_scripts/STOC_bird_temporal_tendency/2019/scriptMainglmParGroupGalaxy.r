@@ -55,7 +55,8 @@ donneesTrend <- read.table(donneesTrend,sep="\t",dec=".",header=TRUE)#### charge
 tabsp <- read.table(tabSpecies,sep="\t",dec=".",header=TRUE)   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
 
 
-
+groupeNom = c("generaliste","milieux batis","milieux forestiers","milieux agricoles")
+groupeCouleur = c("black","firebrick3","chartreuse4","orange")
 
 vars_donnees<-c("id","code_espece","nom_espece","indicateur","annee","abondance_relative","IC_inferieur","IC_superieur","erreur_standard","p_value","significatif","nb_carre","nb_carre_presence","abondance")
 err_msg_donnees<-"\nThe yearly species variation dataset doesn't have the right format. It need to have following 14 variables :\n- id\n- code_espece\n- nom_espece\n- indicateur\n- annee\n- abondance_relative\n- IC_inferieur\n- IC_superieur\n- erreur_standard\n- p_value\n- significatif\n- nb_carre\n- nb_carre_presence\n- abondance\n"
@@ -140,7 +141,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
                       IC_superieur= ifelse(is.na(donnees$IC_superieur),10000,donnees$IC_superieur),
                       valide = donnees$valide, mediane_occurrence = donnees$mediane_occurrence) 
 
-    nomFileResum <- paste("Resultats/",id,"/donneesGroupes_",id, ###### declaration du nom du repertoire et des fichiers de sortie / declaring the name of the output folder and files  
+    nomFileResum <- paste("Output/",id,"/donneesGroupes_",id, ###### declaration du nom du repertoire et des fichiers de sortie / declaring the name of the output folder and files  
                           ".tabular",sep="" )
     write.table(ddd,nomFileResum,row.names=FALSE,sep="\t",dec=".")
     cat(" <--",nomFileResum,"\n")
@@ -222,14 +223,15 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     datasum <- merge(datasum,tIncert,by="groupe") #### 
     datasum <- data.frame(id,datasum)
                                         #datasum$cat_tendance_EBCC <- affectCatEBCC(trend,pVal,ICinf,ICsup
-    namefilesum <- paste("Resultats/",id,"/tendancesGlobalesGroupes_",id,
+    namefilesum <- paste("Output/",id,"/tendancesGlobalesGroupes_",id,
                          ".tabular",sep="" )
     write.table(datasum,file=namefilesum,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
     cat(" <--",namefilesum,"\n")
 }
 
 
-
+## moyenne geometrique pondere
+geometriqueWeighted <- function(x,w=1) exp(sum(w*log(x))/sum(w))
 
 ################## 
 ###  Do your analysis
