@@ -67,10 +67,13 @@ err_msg_donneesTrend<-"\nThe species global tendances dataset doesn't have the r
 vars_tabsp<-c("espece","nom","nomscientific","indicateur","specialisation")
 err_msg_tabsp<-"\nThe species dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- espece\n- nom\n- nomscientific\n- indicateur\n- specialisation\n"
 
+vars_tBiais<-c("occurrenceMed","biais")
+err_msg_tBiais<-"\nThe bias dataset doesn't have the right format. It need to have the following 2 variables :\n- occurenceMed\n- biais\n"
 
 check_file(donnees,err_msg_donnees,vars_donnees,14)
 check_file(donneesTrend,err_msg_donneesTrend,vars_donneesTrend,18)
 check_file(tabsp,err_msg_tabsp,vars_tabsp,5)
+check_file(tBiais,err_msg_tBiais,vars_tBiais,2)
 
 
 spsFiltre=unique(levels(donnees$code_espece)) #### Recupère la liste des especes du tabCLEAN qui ont été sélectionnée et qui ont passé le filtre / retrieve species name that were selected and then filtered before
