@@ -430,11 +430,164 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
 
 
 
-## moyenne geometrique pondere
+#################################################################################################################### debut de la fonction de moyenne geometrique pondere / start of the geometric weighted mean function 
 geometriqueWeighted <- function(x,w=1) exp(sum(w*log(x))/sum(w))
+#################################################################################################################### fin de la fonction de moyenne geometrique pondere / end of the geometric weighted mean function 
 
 
-###################################################################################################################
+
+##################################################################################################################### debut de la fonction analyseGroupe / start of the function analyseGroupe
+## Analyse par groupe de specialisation Ã  partir des resulats de variation d'abondance par especes / analysis by specialization group based on results of the analysis of population evolution trend
+#
+
+
+analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=donneesTrend,ICfigureGroupeSp=TRUE,powerWeight=2,
+                          correctionAbondanceNull = 0.000001,
+                          groupeNom = c("generaliste","milieux batis","milieux forestiers","milieux agricoles"),
+                          groupeCouleur = c("black","firebrick3","chartreuse4","orange")) {
+    
+    
+
+
+
+    ## donnees tendances globales / results of the global trends
+    donneesTrend <- subset(donneesTrend, select = c(code_espece,valide,mediane_occurrence))
+	
+    ## table de reference espece  / reference table for species
+    tabsp <- subset(tabsp, select= c(sp,nom,indicateur, specialisation))
+    donnees <- merge(donnees,donneesTrend,by="code_espece")
+    donnees <- merge(donnees,tabsp,by.x="code_espece",by.y="sp")
+    ## table de correspondance de biais en fonction des medianes des occuerences
+	
+    
+    nameFileSpe <-  paste("Output/",id,"/variationsAnnuellesGroupes_",id, ############# Declare le fichier de sortie des variations annuelles par groupe / declare the name of the outputfile for annual population evolution trend by group 
+                          ".tabular",sep="" )
+    nameFileSpepng <-  paste("Output/",id,"/variationsAnnuellesGroupes_",id, ############# Declare le fichier de sortie graphique des variations annuelles par groupe / declare the name of the graphical output file for annual population evolution trend by group
+                             ".png",sep="" )
+    
+    grpe <- donnees$specialisation
+    
+    ####### valeur seuil sont obtenues à partir de simulations / threshold values are obtained from simulations
+    ff <- function(x,y) max(which(y<=x)) ## fonction pour recherche le poid associé à valeur max parmi valeur seuil d'occurence inferieur ou egale à occurence mediane obs / function to retrieve the weight associated with the max occurence threshold equal or smaller than the occurence mediane observed
+     
+    IncertW <- ifelse(donnees$valide=="Incertain",tBiais$biais[sapply(as.vector(donnees$mediane_occurrence),ff,y=tBiais$occurrenceMed)],1) ## pr verifier poids de l'espèce dans analyse, récupére seuil occurence minimum pour lequel tendance pas bonne, et compare avec mediane occurence des données  / to check the weight of species in the analysis, this retrieve occurence threshold with wich real occurence measured on data are compared in order to verify the accuracy of the trend measurment
+    ## poids du Ã  la qualitÃ© de l'estimation
+                                        #   erreur_stW <- 1/((donnees$erreur_st+1)^powerWeight)
+                                        #	erreur_stW <- ifelse( is.na(donnees$IC_superieur),0,erreur_stW)
+    erreur_stW <- ifelse(is.na(donnees$IC_superieur),0,1)#####  si pas d'interval de confiance met 0 et donne un poid de 0 à l'esps (voir ci dessous) /  if no confidence interval calculated give a weight of 0 for the sps 
+    ## calcul du poids total de chaque espèce / calcul of the weight of each species 
+    W <- IncertW * erreur_stW
+    
+    ## variable de regroupement pour les calculs par groupe de specialisation et par an / variables gathered to identify group for the calculation (per specialization and per year)
+    grAn <- paste(donnees$specialisation,donnees$annee,sep="_")
+    ## data frame pour le calcul / dataframe made for the calcul
+    dd <- data.frame(grAn,annee = donnees$annee, grpe,W,ab=donnees$abondance_relative,ICinf= donnees$IC_inferieur, ICsup= ifelse(is.na(donnees$IC_superieur),10000,donnees$IC_superieur)) 
+    ## table resumer de tous les poids / table to sum up the weights of each species depending on the incertainty in the calcul of the poulation evolution trends
+    ddd <- data.frame(code_espece = donnees$code_espece,nom_espece = donnees$nom_espece,annee = donnees$annee, 
+                      groupe_indicateur = grpe,
+                      poids_erreur_standard = round(erreur_stW,3), poids_incertitude = round(IncertW,3),poids_final = round(W,3),
+                      abondance_relative=donnees$abondance_relative,
+                      IC_inferieur= donnees$IC_inferieur, 
+                      IC_superieur= ifelse(is.na(donnees$IC_superieur),10000,donnees$IC_superieur),
+                      valide = donnees$valide, mediane_occurrence = donnees$mediane_occurrence) 
+
+    nomFileResum <- paste("Resultats/",id,"/donneesGroupes_",id, ###### declaration du nom du repertoire et des fichiers de sortie / declaring the name of the output folder and files  
+                          ".tabular",sep="" )
+    write.table(ddd,nomFileResum,row.names=FALSE,sep="\t",dec=".")
+    cat(" <--",nomFileResum,"\n")
+    
+    ## calcul des moyennes pondÃ©rÃ© par groupe par an et pour les abondance et les IC	/ calcul of weighted means per specialization group and per year for the abundance and confidence interval
+    for(j in 5:7) dd[,j] <- ifelse(dd[,j]==0,correctionAbondanceNull,dd[,j])	
+    ag <- apply(dd[,5:7], 2,  ######## sur les abondances relatives, les ICinf et ICsup
+                function(x) {
+                    sapply(split(data.frame(dd[,1:4], x), dd$grAn),  ###### fait les moyennes pondérés par groupe grAn / calculate the weighted mean by group grAn
+                           function(y) round(geometriqueWeighted(y[,5], w = y$W),3))
+                })
+    ##	gg <- subset(dd,as.character(dd$grAn)=="milieux forestier_2014")  #############################################################
+
+    ag <- ifelse(is.na(ag),1,ag)
+    ag <- as.data.frame(ag)
+    ag$grAn <-  rownames(ag)
+    dbon <- subset(donnees,valide=="bon")
+    dIncert <- subset(donnees,valide=="Incertain")
+    ## calcul nombre d'espece "bonne" pour le calcul / calculating the number of species with low level of incertainty, "good" species 
+    bon <- tapply(dbon$nom,dbon$specialisation,FUN=function(X)length(unique(X)) )
+    bon <- ifelse(is.na(bon),0,bon)
+    tbon <- data.frame(groupe=names(bon),bon)
+    ## calcul nombre d'especes "incertaines" pour le calcul / calculating the number of species with high level of incertainty, "bad" species
+    Incert <- tapply(dIncert$nom,dIncert$specialisation,FUN=function(X)length(unique(X)) )
+    Incert <- ifelse(is.na(Incert),0,Incert)
+    tIncert <- data.frame(groupe=names(Incert),Incertain=Incert)
+
+    tIncert <- merge(tIncert,tbon,by="groupe")
+    
+    ## table de données avec les moyennes ponderees par groupe / table of the data with the weighted mean by group 
+    da <- merge(unique(dd[,1:3]),ag,by="grAn")[,-1]
+    colnames(da) <- c("annee","groupe","abondance_relative","IC_inferieur","IC_superieur")
+
+    da$annee <- as.numeric(da$annee)
+    da <-  merge(da,tIncert,by="groupe") #### ajoute le nombre d'espece "incertaines" et "bonne" aux resultats  / add the number of "good" and "bad" species to the overall resutls
+    da <- subset(da, groupe != "non")
+    colnames(da)[6:7] <-  c("nombre_especes_incertaines","nombre_espece_bonnes")
+    a <- data.frame(id,da)
+    write.table(da,file=nameFileSpe,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
+
+    cat(" <--",nameFileSpe,"\n")
+    yearsrange <- c(min(da$annee),max(da$annee))
+    
+    ## figure par ggplot2  / plots with ggplot2
+    titre <- paste("Variation de l'indicateur groupe de spÃ©cialisation",sep="")
+
+    vecCouleur <- setNames(groupeCouleur,groupeNom)
+                                        #browser()
+    p <- ggplot(data = da, mapping = aes(x = annee, y = abondance_relative, colour=groupe,fill=groupe))
+    p <- p + geom_hline(aes(yintercept = 1), colour="white", alpha=1,size=1.2) 
+    if(ICfigureGroupeSp)
+        p <- p + geom_ribbon(mapping=aes(ymin=IC_inferieur,ymax=IC_superieur),linetype=2,alpha=.1,size=0.1) 
+    p <- p + geom_line(size=1.5)
+    p <- p +  ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) 
+    if(!is.null(groupeNom)) p <- p + scale_colour_manual(values=vecCouleur, name = "" )+
+                                scale_x_continuous(breaks=unique(da$annee))
+    if(!is.null(groupeNom)) p <- p +  scale_fill_manual(values=vecCouleur, name="")
+    p <- p +  theme(panel.grid.minor=element_blank(), panel.grid.major.y=element_blank()) 
+    ggsave(nameFileSpepng, p,width=17,height=10,units="cm")
+
+                                        #   cat(" <==",nameFileSpepng,"\n")
+    
+    ## calul pour chaque groupe une pente de regression d'evolution des abondances sur la periode étudiée / calculating for each group the regression slope for the abundance evolution on the studied period
+    vecSpe <- unique(da$groupe)
+    datasum <- data.frame(groupe=NULL,tendance=NULL,pourcentage_variation=NULL)
+    for(spe in 1:4){
+                                        # print(spe)
+        subtab <- subset(da,groupe==vecSpe[spe])
+        if(nrow(subtab)>1) {
+            sumlm <- summary(lm(abondance_relative~annee,data=subtab)) ##### recupère les resultats du modèle linéaire / retrieve the results of the linear model
+            subdatasum <- data.frame(groupe=vecSpe[spe],
+                                     tendance=round(sumlm$coefficients[2,1],3),
+                                     pourcentage_variation=round(sumlm$coefficients[2,1]*(nrow(subtab)-1)*100,3)) #### assemble les resultats pour en faire une sortie  /  bring together the results for an output file
+            datasum <- rbind(datasum,subdatasum)
+            
+        }
+        
+    }
+    datasum <- merge(datasum,tIncert,by="groupe") #### 
+    datasum <- data.frame(id,datasum)
+                                        #datasum$cat_tendance_EBCC <- affectCatEBCC(trend,pVal,ICinf,ICsup
+    namefilesum <- paste("Resultats/",id,"/tendancesGlobalesGroupes_",id,
+                         ".tabular",sep="" )
+    write.table(datasum,file=namefilesum,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
+    cat(" <--",namefilesum,"\n")
+}
+
+################################################################################################################## fin de la fonction analyseGroupe / end of the function analyseGroupe
+
+
+
+
+
+
+
+################################################################################################################### debut de la fonction check_file / start of the function check_file
 # Fonction pour verifier les données d'entrée / General function to check integrity of input file. Will check numbers and contents of variables(colnames). 
 #return an error message and exit if mismatch detected
 #Faut rentrer le nom du jeu de données, le nbre et le nom des variables / Enter dataset name,  expected number and names of variables. + an exit error message to guide user.
@@ -452,5 +605,5 @@ check_file<-function(dataset,err_msg,vars,nb_vars){
     }
 }
 
-
+#####################################################################################################################
 
