@@ -34,6 +34,12 @@ if (length(args)==0) {
 }
 
 
+## creation d'un dossier pour y mettre les resultats
+
+dir.create(paste("Output/",id,sep=""),recursive=TRUE)
+cat(paste("Create Output/",id,"\n",sep=""))
+dir.create(paste("Output/",id,"/Incertain/",sep=""),recursive=TRUE)
+cat(paste("Create Output/",id,"Incertain/\n",sep=""))
 
 
 #Import des données / Import data 
@@ -55,24 +61,24 @@ tabsp=subset (tabsp, (espece %in% spsFiltre)) #### Enlève les espèces qui n'on
 sp=as.character(tabsp$espece)  ##### liste des espece en code ou abbreviation gardées pour les analyses ### arg de la fonction  DECLARE AUSSI APRES DS FONCTION  / list of the code or abbreviation of the species kept for the analyses
 
 
-
+source(namefonction)
 
 
 ###################### POTENTIELLEMENT INTEGRABLE OU A ENLEVER CAR OPERATION N A PLUS RAISON D ETRE ICI ELLE EST FAIT AU TOUT DEBUT PAR LES 2 SCRIPTS AVANT
-    if(!is.null(spExclude)) {   ########################### Exclusion des sps se trouvant dans une liste choisie par utilisateur  !!!!!! Ne sait pas si doit être intégré à la fonction ou sortie de celle ci comme c'était le cas avant,
-                                ##### si c'est le cas alors il faut rajouter un argument à la fonction ci dessous : ,spExclude=NULL
-                                        # browser()
-        #dataCLEAN <- subset(tabCLEAN,!(espece %in% spExclude)) ## pas besoin car sont déjà exclu de base 
-        tabsp <- subset(tabsp, !(espece %in% spExclude))
+#    if(!is.null(spExclude)) {   ########################### Exclusion des sps se trouvant dans une liste choisie par utilisateur  !!!!!! Ne sait pas si doit être intégré à la fonction ou sortie de celle ci comme c'était le cas avant,
+ #                               ##### si c'est le cas alors il faut rajouter un argument à la fonction ci dessous : ,spExclude=NULL
+  #                                      # browser()
+   #     #dataCLEAN <- subset(tabCLEAN,!(espece %in% spExclude)) ## pas besoin car sont déjà exclu de base 
+    #    tabsp <- subset(tabsp, !(espece %in% spExclude))
 
-    }
+    #}
 	################## FIN DU POTENTIELLEMENT INTEGRABLE OU A ENLEVER
 	
 ## fonction general de calcul de la variation temporelle et de la tendance generale
 ## la fonction genere aussi les graphiques
 
 main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,tabsp=tabsp,annees=annees,figure=TRUE,description=TRUE,tendanceSurFigure=TRUE,tendanceGroupSpe = FALSE, ###### declaration des arguments  listSp=sp était avant declaré avant la fonction mais il me semble que ca marche aussi comme cela
-                     seuilOccu=14,seuilAbond=NA,ecritureStepByStep=FALSE,spExcluPassage1=c("MOTFLA","SAXRUB","OENOEN","ANTPRA","PHYTRO")) {   #################  ici peut être à rajouter de spExclude qui se trouvait dans la fonction regroupant celle ci
+                     seuilOccu=14,seuilAbond=NA,ecritureStepByStep=FALSE)) {####spExcluPassage1=c("MOTFLA","SAXRUB","OENOEN","ANTPRA","PHYTRO")) {   #################  
                                                                                                                                       #########  j'ai rajouté arguments de la fonction qui englobait cette fonction: spExcluPassage1
     ##  donneesAll=data;listSp=sp;annees=firstYear:lastYear;figure=TRUE;description=TRUE;tendanceSurFigure=TRUE;tendanceGroupSpe = FALSE;
     ##                   seuilOccu=14;seuilAbond=NA;ecritureStepByStep=TRUE
@@ -97,7 +103,6 @@ affectCatEBCC <- function(trend,pVal,ICinf,ICsup){
 }
 
 ############################################################################################################ fin de la fonction renvoyant la categorie EBCC
-
 
 
 
@@ -228,8 +233,6 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     firstY <- min(annee)
     lastY <- max(annee)
 	
-	listSp <- sp                  ###### COMPRENDS PAS CAR C UN ARGUMENT DE LA FONCTION DONC FAUT PAS LE DECLARER AVANT ? ET IL ETAIT DECLARE AUSSI AVANT DANS LA FONCTION D ORIGINE (c déclaré aussi avant mais sinon à supprimer)
-    annees <- firstYear:lastYear  ###### COMPRENDS PAS CAR C UN ARGUMENT DE LA FONCTION DONC FAUT PAS LE DECLARER AVANT ? (c déclaré avant aussi mais sinon à supprimer)
 	
 	
 	
