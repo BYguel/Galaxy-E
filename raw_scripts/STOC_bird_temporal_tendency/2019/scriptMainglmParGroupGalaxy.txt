@@ -39,10 +39,10 @@ if (length(args)==0) {
 
 
 #Import des données / Import data 
-tBiais=read.table(tBiais,sep="\t",dec=".") ###### charge le fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / load the file containing the detection bias obtained with theoretical model of population dynamic and survey
-donnees <-  read.table(donnees,sep="\t",dec=".") #### charge le fichier de resultat sur les tendances annuelles par espèce / load annual population evolution trend for each species obtained with the function mainglm
-donneesTrend <- read.table(donneesTrend,sep="\t",dec=".")#### charge le fichier de resultat sur les tendances sur la periode etudiée par espèce / load population evolution trend on the studied period for each species obtained with the function mainglm
-tabsp <- read.table(tabSpecies,sep="\t",dec=".")   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
+tBiais=read.table(tBiais,sep="\t",dec=".",h=T) ###### charge le fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / load the file containing the detection bias obtained with theoretical model of population dynamic and survey
+donnees <-  read.table(donnees,sep="\t",dec=".",h=T) #### charge le fichier de resultat sur les tendances annuelles par espèce / load annual population evolution trend for each species obtained with the function mainglm
+donneesTrend <- read.table(donneesTrend,sep="\t",dec=".",h=T)#### charge le fichier de resultat sur les tendances sur la periode etudiée par espèce / load population evolution trend on the studied period for each species obtained with the function mainglm
+tabsp <- read.table(tabSpecies,sep="\t",dec=".",h=T)   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
 ncol<-as.integer(dim(donnees)[2])
 if(ncol<14){ #Verifiction de la présence mini de 14 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
     stop("The file don't have at least 14 variables", call.=FALSE)
