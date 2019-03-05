@@ -31,7 +31,7 @@ if (length(args)==0) {
 	tabSpecies<-args[3] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
     id<-args[4]  ##### nom du dossier de sortie des resultats / name of the output folder
     spExclude <- args [5] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
- tBiais <-args [6] ##########   fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / the file containing the detection bias depending on occurance data obtained with theoretical model of population dynamic and survey
+ tBiais <-args [6] ##########   fichier contenant le biais de détéction en fonction des medianes d'occurences, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / the file containing the detection bias depending on median occurance data obtained with theoretical model of population dynamic and survey
  
 }
 
@@ -92,7 +92,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     tabsp <- subset(tabsp, select= c(sp,nom,indicateur, specialisation))
     donnees <- merge(donnees,donneesTrend,by="code_espece")
     donnees <- merge(donnees,tabsp,by.x="code_espece",by.y="sp")
-    ## table de correspondance de biais en fonction des medianes des occuerences
+    
 	
     
     nameFileSpe <-  paste("Output/",id,"/variationsAnnuellesGroupes_",id, ############# Declare le fichier de sortie des variations annuelles par groupe / declare the name of the outputfile for annual population evolution trend by group 
