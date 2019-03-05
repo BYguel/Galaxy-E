@@ -9,14 +9,13 @@
 #!/usr/bin/env Rscript
 library(reshape2)
 
-
 ###########
 #delcaration des arguments et variables/ declaring some variables and load arguments
 
 args = commandArgs(trailingOnly=TRUE)
 
 if (length(args)==0) {
-    stop("At least one argument must be supplied (input file)", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
+    stop("At least one argument must be supplied, dataset transformed by make table function (.tabular).", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
 } else {
     Datatransformedforfiltering_trendanalysis<-args[1] ###### Nom du fichier peut provenir de la fonction "MakeTableAnalyse" / file name , may result from the function "MakeTableAnalys"    
 }
@@ -28,9 +27,9 @@ if (length(args)==0) {
 #Import des données / Import data 
 tab <- read.table(Datatransformedforfiltering_trendanalysis,sep="\t",dec=".",header=TRUE) #  
 
-
-if(ncol(tab)<3){ #Verifiction de la présence mini de 3 colonnes, si c'est pas le cas= message d'erreur / checking for the presence of 3 columns in the file if not = error message
-    stop("The file don't have at least 3 variables", call.=FALSE)
+err_msg_tab="\nThe input dataset doesn't have the right format. It need to have the following 2 variables : \"carre\" and \"annee\" followed by at least one species"
+if(ncol(tab)<3 || !("carre" %in% names(tab)) || !("annee" %in% names(tab))){
+    stop(err_msg_tab,call.=FALSE)
 }
 
 
