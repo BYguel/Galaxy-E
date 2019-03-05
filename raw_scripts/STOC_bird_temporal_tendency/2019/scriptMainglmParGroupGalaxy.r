@@ -16,7 +16,7 @@ suppressMessages(library(reshape))
 suppressMessages(library(data.table))
 suppressMessages(library(reshape2))
 
-source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
+source("FunctMainGlmGalaxy.r")### chargement des fonctions analyseGroupe, geometriqueWeighted et checkfile / load the functions analyseGroupe, geometriqueWeighted and checkfile
 
 
 ###########
