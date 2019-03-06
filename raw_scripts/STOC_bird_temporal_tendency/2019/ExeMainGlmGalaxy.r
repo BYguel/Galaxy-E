@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+﻿#!/usr/bin/env Rscript
 
 ######################################################################################################################################
 ############## COMMAND LINE TO CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION  function:main.glm    ##############################
@@ -15,7 +15,7 @@ suppressMessages(library(reshape))
 suppressMessages(library(data.table))
 suppressMessages(library(reshape2))
 
-source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
+source("FunctTrendSTOCGalaxy.r")### chargement des fonctions / load the functions
 
 
 ###########
