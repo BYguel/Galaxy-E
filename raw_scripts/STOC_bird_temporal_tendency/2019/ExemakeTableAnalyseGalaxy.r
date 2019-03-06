@@ -1,9 +1,12 @@
-#!/usr/bin/env Rscript
-source("FunctMainGlmGalaxy.r")### chargement des fonctions / load the functions
+﻿#!/usr/bin/env Rscript
+
 ##################################################################################################################
 ################  Data transformation for population evolution trend analyses  function:makeTableAnalyse #########
 ##################################################################################################################
 ###########
+
+
+source("FunctTrendSTOCGalaxy.r")### chargement des fonctions / load the functions
 
 #delcaration des arguments et variables/ declaring some variables and load arguments
 
