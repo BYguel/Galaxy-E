@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+﻿#!/usr/bin/env Rscript
 
 #####################################################################################################################
 ############## FILTERING RARE AND LOW-ABUNDANCE SPECIES   function:filtreEspeceRare    ##############################
@@ -7,8 +7,10 @@
 #### Based on Romain Lorrillière R script
 #### Modified by Alan Amosse and Benjamin Yguel for integrating within Galaxy-E
 
-#!/usr/bin/env Rscript
-library(reshape2)
+
+suppressMessages(library(reshape2))
+
+source("FunctTrendSTOCGalaxy.r")### chargement des fonctions / load the functions
 
 ###########
 #delcaration des arguments et variables/ declaring some variables and load arguments
