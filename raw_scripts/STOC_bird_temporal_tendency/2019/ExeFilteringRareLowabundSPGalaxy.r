@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env Rscript
+#!/usr/bin/env Rscript
 
 #####################################################################################################################
 ############## FILTERING RARE AND LOW-ABUNDANCE SPECIES   function:filtreEspeceRare    ##############################
@@ -44,8 +44,7 @@ tab_filtred2<-filter_rare_species(tab)
 
 #save the data in a output file in a tabular format
 filename <- "Datafilteredfortrendanalysis.tabular"
-print(paste("write table ",filename))
 write.table(tab_filtred2, filename,row.names=FALSE,sep="\t",dec=".")
-
+cat(paste("\nWrite table with data filtered for trend analysis. \n--> \"",filename,"\"\n")) 
 
 
