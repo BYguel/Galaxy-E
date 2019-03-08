@@ -640,10 +640,10 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
                       IC_superieur= ifelse(is.na(donnees$IC_superieur),10000,donnees$IC_superieur),
                       valide = donnees$valide, mediane_occurrence = donnees$mediane_occurrence) 
 
-    nomFileResum <- paste("Resultats/",id,"/donneesGroupes_",id, ###### declaration du nom du repertoire et des fichiers de sortie / declaring the name of the output folder and files  
+    nomFileResum <- paste("Output/",id,"/donneesGroupes_",id, ###### declaration du nom du repertoire et des fichiers de sortie / declaring the name of the output folder and files  
                           ".tabular",sep="" )
     write.table(ddd,nomFileResum,row.names=FALSE,sep="\t",dec=".")
-    cat(" <--",nomFileResum,"\n")
+    cat("-->",nomFileResum,"\n")
     
     ## calcul des moyennes pondÃ©rÃ© par groupe par an et pour les abondance et les IC	/ calcul of weighted means per specialization group and per year for the abundance and confidence interval
     for(j in 5:7) dd[,j] <- ifelse(dd[,j]==0,correctionAbondanceNull,dd[,j])	
@@ -681,7 +681,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     a <- data.frame(id,da)
     write.table(da,file=nameFileSpe,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
 
-    cat(" <--",nameFileSpe,"\n")
+    cat("-->",nameFileSpe,"\n")
     yearsrange <- c(min(da$annee),max(da$annee))
     
     ## figure par ggplot2  / plots with ggplot2
@@ -722,10 +722,10 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     datasum <- merge(datasum,tIncert,by="groupe") #### 
     datasum <- data.frame(id,datasum)
                                         #datasum$cat_tendance_EBCC <- affectCatEBCC(trend,pVal,ICinf,ICsup
-    namefilesum <- paste("Resultats/",id,"/tendancesGlobalesGroupes_",id,
+    namefilesum <- paste("Output/",id,"/tendancesGlobalesGroupes_",id,
                          ".tabular",sep="" )
     write.table(datasum,file=namefilesum,row.names=FALSE,quote=FALSE,sep="\t",dec=".")
-    cat(" <--",namefilesum,"\n")
+    cat("-->",namefilesum,"\n")
 }
 
 ################################################################################################################## fin de la fonction analyseGroupe / end of the function analyseGroupe
