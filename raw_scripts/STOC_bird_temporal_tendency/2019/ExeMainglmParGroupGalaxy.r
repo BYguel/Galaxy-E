@@ -72,11 +72,6 @@ tabsp=subset (tabsp, (espece %in% spsFiltre)) #### Enlève les espèces qui n'on
 sp=as.character(tabsp$espece)  ##### liste des espece en code ou abbreviation gardées pour les analyses ### arg de la fonction  DECLARE AUSSI APRES DS FONCTION  / list of the code or abbreviation of the species kept for the analyses
 tabsp=data.frame(tabsp,sp)### rajoute une colonne identique appelé sp / add new column called sp
 
-#if(!is.null(spExclude)) {
-#    donnees <- subset(donnees,!(code_espece %in% spExclude))
-#    tabsp <- subset(tabsp, !(espece %in% spExclude))
-#}
-
 if(length(spExclude)!=0) {
     donnees <- subset(donnees,!(code_espece %in% spExclude))
     tabsp <- subset(tabsp, !(espece %in% spExclude))
