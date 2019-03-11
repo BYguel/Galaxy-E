@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env Rscript
+#!/usr/bin/env Rscript
 
 ##################################################################################################################
 ################  Data transformation for population evolution trend analyses  function:makeTableAnalyse #########
@@ -41,4 +41,4 @@ tableAnalyse<-makeTableAnalyse(data) #la fonction a un 'return' il faut donc sto
 filename <- "Datatransformedforfiltering_trendanalysis.tabular"
 write.table(tableAnalyse, filename,row.names=FALSE,sep="\t",dec=".")
 
-cat('exit\n')
+cat(paste("\nWrite table with data transformed for filtering. \n--> \"",filename,"\"\n",sep=""))

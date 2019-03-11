@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env Rscript
+#!/usr/bin/env Rscript
 
 ######################################################################################################################################
 ############## COMMAND LINE TO CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION  function:main.glm    ##############################
@@ -70,13 +70,16 @@ tabsp=subset (tabsp, (espece %in% spsFiltre)) #### liste des espèces exclu par 
 sp=as.character(tabsp$espece)  ##### liste des espece en code ou abbreviation gardées pour les analyses ### arg de la fonction  DECLARE AUSSI APRES DS FONCTION  / list of the code or abbreviation of the species kept for the analyses
 #cat("\n\nsp\n")
 #print(sp)
-
-cat("\n\nEspèces exclues de l'analyse :\n")
-cat(spExclude)
-cat("\n")
-if(!is.null(spExclude)) {
+if(length(spExclude)!=0) {
     tabCLEAN <- subset(tabCLEAN,!(espece %in% spExclude))
     tabsp <- subset(tabsp, !(espece %in% spExclude))
+
+    cat("\n\nEspèces exclues de l'analyse :\n")
+    cat(spExclude)
+    cat("\n")
+}
+if(length(tabCLEAN$espece)==0){
+    stop("There is no species left for the analyse.", call.=FALSE) #si pas plus d'espèce après filtre / if no more species after filter
 }
 #cat("\n\ntabsp\n")
 #print(tabsp)
@@ -85,7 +88,7 @@ if(!is.null(spExclude)) {
 ################## 
 ###  Do your analysis
 
-main.glm(donneesAll=tabCLEAN,tabsp=tabsp)
+main.glm(donneesAll=tabCLEAN,tabsp=tabsp,id=id,assessIC=AssessIC)
 
 
 

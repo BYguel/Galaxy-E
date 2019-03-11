@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env Rscript
+#!/usr/bin/env Rscript
 
 ##################################################################################################################################################
 ############## CALCULATE AND PLOT EVOLUTION OF SPECIES POPULATION BY SPECIALIZATION GROUP  function:analyse.Groupe  ##############################
@@ -32,7 +32,7 @@ if (length(args)!=6) {
     donneesTrend <- args[2] ####### Nom du fichier avec extension "***tendanceGlobalEspece***.tabular", peut provenir de la fonction "mainglm" / / file name without the file type "***tendanceGlobalEspece***.tabular", may result from the function "mainglm"    
     tabSpecies<-args[3] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"  
     id<-args[4]  ##### nom du dossier de sortie des resultats / name of the output folder
-    spExclude <- args [5] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
+    spExclude <- strsplit(args [5],",")[[1]] ##### liste d'espece qu on veut exclure de l analyse  / list of species that will be excluded
     tBiais <-args [6] ##########   fichier contenant le biais de détéction en fonction des occurances, obtenu à partir d'un modéle théorique de dynamique de pop et de survey / the file containing the detection bias depending on occurance data obtained with theoretical model of population dynamic and survey
 }
 
@@ -72,13 +72,21 @@ tabsp=subset (tabsp, (espece %in% spsFiltre)) #### Enlève les espèces qui n'on
 sp=as.character(tabsp$espece)  ##### liste des espece en code ou abbreviation gardées pour les analyses ### arg de la fonction  DECLARE AUSSI APRES DS FONCTION  / list of the code or abbreviation of the species kept for the analyses
 tabsp=data.frame(tabsp,sp)### rajoute une colonne identique appelé sp / add new column called sp
 
-cat("\n\nEspèces exclues de l'analyse :\n")
-cat(spExclude)
-cat("\n")
-if(!is.null(spExclude)) {
+if(length(spExclude)!=0) {
     donnees <- subset(donnees,!(code_espece %in% spExclude))
     tabsp <- subset(tabsp, !(espece %in% spExclude))
+
+    cat("\n\nEspèces exclues de l'analyse :\n")
+    cat(spExclude)
+    cat("\n")
 }
+if(length(donnees$code_espece)==0){
+    stop("There is no species left for the analyse.", call.=FALSE) #si pas plus d'espèce après filtre / if no more species after filter
+}
+
+
+
+
 ## creation d'un dossier pour y mettre les resultats / create folder for the output of the analyses   ###### NORMALEMENT DOIT ËTRE DEJ2 CREER POUR LES SORTIES TENDANCES PAR SPS DONC PAS SUR QU IL FAUT REFAIRE CETTE ETAPE
 
 dir.create(paste("Output/",id,sep=""),recursive=TRUE,showWarnings=FALSE)
@@ -92,4 +100,4 @@ cat(paste("Create Output/",id,"Incertain/\n",sep=""))
 
 ################## 
 ###  Do your analysis
-analyseGroupe(id,tabsp=tabsp,donnees=donnees,donneesTrend=donneesTrend,ICfigureGroupeSp=TRUE,groupeNom = groupeNom,groupeCouleur=groupeCouleur)
+analyseGroupe(id=id,tabsp=tabsp,donnees=donnees,donneesTrend=donneesTrend,ICfigureGroupeSp=TRUE,groupeNom = groupeNom,groupeCouleur=groupeCouleur)
