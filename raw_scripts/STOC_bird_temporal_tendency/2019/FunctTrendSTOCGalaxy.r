@@ -209,8 +209,8 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
                                         #	browser()
     ## analyse par espece
 ### browser()
-    ## affichage des especes conservÃ©es pour l'analyse  ### PAS SUR QUE CE SOIT ENCORE UTILE
-    cat("\n",nbSp," Espéces conservÃ©es pour l'analyse\n\n",sep="")
+    ## affichage des especes conservees pour l'analyse  ### PAS SUR QUE CE SOIT ENCORE UTILE
+    cat("\n",nbSp," Espéces conservees pour l'analyse\n\n",sep="")
     rownames(tabsp) <- tabsp$espece
     tabCons <- data.frame(Code_espece = listSp, nom_espece = tabsp[as.character(listSp),"nom"])
     print(tabCons)  
@@ -291,7 +291,7 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
                            catPoint=ifelse(pval<seuilSignif,"significatif",NA),pval,
                            courbe=vpan[1],
                            panel=vpan[1])
-        ## netoyage des intervalle de confiance superieur trÃ¨s trÃ¨s grande et qd données pas suffisantes pour calcul d'IC /cleaning of wrong or biaised measures of the confidence interval
+        ## netoyage des intervalle de confiance mal estimés et qd donnees pas suffisantes pour calcul d'IC /cleaning of wrong or biaised measures of the confidence interval
         if(assessIC) {
         tab1$UL <- ifelse( nb_carre_presence==0,NA,tab1$UL)
         tab1$UL <-  ifelse(tab1$UL == Inf, NA,tab1$UL)
@@ -471,8 +471,8 @@ affectCatEBCC <- function(trend,pVal,ICinf,ICsup){
   catEBCC <- ifelse(pVal>0.05,
                     ifelse(ICinf < 0.95 | ICsup > 1.05,"Incertain","Stable"),
                     ifelse(trend<1,
-                           ifelse(ICsup<0.95,"Fort dÃ©clin","DÃ©clin modÃ©rÃ©"),
-                           ifelse(ICinf>1.05,"Forte augmentation","Augmentation modÃ©rÃ©e")))
+                           ifelse(ICsup<0.95,"Fort declin","Declin moderee"),
+                           ifelse(ICinf>1.05,"Forte augmentation","Augmentation modere")))
   return(catEBCC)
 }
 
@@ -496,7 +496,7 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
   figname<- paste("Output/",id,"/",ifelse(valide=="Incertain","Incertain/",""),
                   sp,"_",id,serie, ".png",
                   sep = "")
-  ## coordonnÃ©e des ligne horizontal de seuil pour les abondances et les occurences
+  ## coordonnee des ligne horizontal de seuil pour les abondances et les occurences
   hline.data1 <- data.frame(z = c(1), panel = c(vpan[1]),couleur = "variation abondance",type="variation abondance")
   hline.data2 <- data.frame(z = c(0,seuilOccu), panel = c(vpan[2],vpan[2]),couleur = "seuil",type="seuil")
   hline.data3 <- data.frame(z = 0, panel = vpan[3] ,couleur = "seuil",type="seuil")  
@@ -534,7 +534,7 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
       theme(legend.position="none",
             panel.grid.minor=element_blank(),
             panel.grid.major.y=element_blank())  +
-      ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) +
+      ylab("") + xlab("Annee")+ ggtitle(titre) +
       scale_colour_manual(values=col, name = "" ,
                           breaks = names(col))+
       scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
@@ -557,7 +557,7 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
       theme(legend.position="none",
             panel.grid.minor=element_blank(),
             panel.grid.major.y=element_blank())  +
-      ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) +
+      ylab("") + xlab("Annee")+ ggtitle(titre) +
       scale_colour_manual(values=col, name = "" ,
                           breaks = names(col))+
       scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
@@ -586,7 +586,7 @@ geometriqueWeighted <- function(x,w=1) exp(sum(w*log(x))/sum(w))
 
 
 ##################################################################################################################### debut de la fonction analyseGroupe / start of the function analyseGroupe
-## Analyse par groupe de specialisation Ã  partir des resulats de variation d'abondance par especes / analysis by specialization group based on results of the analysis of population evolution trend
+## Analyse par groupe de specialisation a partir des resulats de variation d'abondance par especes / analysis by specialization group based on results of the analysis of population evolution trend
 #
 
 
@@ -620,7 +620,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     ff <- function(x,y) max(which(y<=x)) ## fonction pour recherche le poid associé à valeur max parmi valeur seuil d'occurence inferieur ou egale à occurence mediane obs / function to retrieve the weight associated with the max occurence threshold equal or smaller than the occurence mediane observed
      
     IncertW <- ifelse(donnees$valide=="Incertain",tBiais$biais[sapply(as.vector(donnees$mediane_occurrence),ff,y=tBiais$occurrenceMed)],1) ## pr verifier poids de l'espèce dans analyse, récupére seuil occurence minimum pour lequel tendance pas bonne, et compare avec mediane occurence des données  / to check the weight of species in the analysis, this retrieve occurence threshold with wich real occurence measured on data are compared in order to verify the accuracy of the trend measurment
-    ## poids du Ã  la qualitÃ© de l'estimation
+    ## poids du a la qualite de l'estimation
                                         #   erreur_stW <- 1/((donnees$erreur_st+1)^powerWeight)
                                         #	erreur_stW <- ifelse( is.na(donnees$IC_superieur),0,erreur_stW)
     erreur_stW <- ifelse(is.na(donnees$IC_superieur),0,1)#####  si pas d'interval de confiance met 0 et donne un poid de 0 à l'esps (voir ci dessous) /  if no confidence interval calculated give a weight of 0 for the sps 
@@ -645,7 +645,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     write.table(ddd,nomFileResum,row.names=FALSE,sep="\t",dec=".")
     cat("-->",nomFileResum,"\n")
     
-    ## calcul des moyennes pondÃ©rÃ© par groupe par an et pour les abondance et les IC	/ calcul of weighted means per specialization group and per year for the abundance and confidence interval
+    ## calcul des moyennes ponderees par groupe par an et pour les abondance et les IC	/ calcul of weighted means per specialization group and per year for the abundance and confidence interval
     for(j in 5:7) dd[,j] <- ifelse(dd[,j]==0,correctionAbondanceNull,dd[,j])	
     ag <- apply(dd[,5:7], 2,  ######## sur les abondances relatives, les ICinf et ICsup
                 function(x) {
@@ -685,7 +685,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     yearsrange <- c(min(da$annee),max(da$annee))
     
     ## figure par ggplot2  / plots with ggplot2
-    titre <- paste("Variation de l'indicateur groupe de spÃ©cialisation",sep="")
+    titre <- paste("Variation de l'indicateur groupe de specialisation",sep="")
 
     vecCouleur <- setNames(groupeCouleur,groupeNom)
                                         #browser()
@@ -694,7 +694,7 @@ analyseGroupe <- function(id="france",tabsp=tabsp,donnees=donnees,donneesTrend=d
     if(ICfigureGroupeSp)
         p <- p + geom_ribbon(mapping=aes(ymin=IC_inferieur,ymax=IC_superieur),linetype=2,alpha=.1,size=0.1) 
     p <- p + geom_line(size=1.5)
-    p <- p +  ylab("") + xlab("AnnÃ©e")+ ggtitle(titre) 
+    p <- p +  ylab("") + xlab("Annee")+ ggtitle(titre) 
     if(!is.null(groupeNom)) p <- p + scale_colour_manual(values=vecCouleur, name = "" )+
                                 scale_x_continuous(breaks=unique(da$annee))
     if(!is.null(groupeNom)) p <- p +  scale_fill_manual(values=vecCouleur, name="")
