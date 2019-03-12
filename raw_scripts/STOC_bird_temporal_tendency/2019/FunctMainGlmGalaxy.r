@@ -100,7 +100,7 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
         
         tab3 <- data.frame(annee=annee,val=abond,LL = NA,UL=NA,catPoint=NA,pval=NA,courbe=vpan[3],panel=vpan[3]) ## table pour la figure / data.frame made to realize the graphical outputs
         tab3$catPoint <- ifelse(tab3$val == 0,"0",ifelse(tab3$val < seuilAbond,"infSeuil",NA))
-
+        
         ## GLM pour calcul des tendances annuelles de l'evolution des populations / GLM to measure annual tendency of population evolution 
        formule <- as.formula("abond~as.factor(carre)+as.factor(annee)") #### specification du modèle = log lineaire / specifying the model = log linear
        if(assessIC) {##### OPTION A RENTRER AU DEBUT PEUT ËTRE A METTRE DANS LES ARGUMENTS SI LAISSE LE CHOIX SINON L ARG PAR DEFAUT LORS DE LA DECLARATION DE LA FONCTION
@@ -137,7 +137,7 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
         
         
         
-        tab1 <- data.frame(annee,val=coefannee,  ## tab1 table pour la realisation des figures / table for the graphical outputs  ### 2EME POUR GRAPH ici ce sont le coef de regress annee en fonction des annéés alors que tab3 c'est les abondance en fct des années et tab2 nombre de carré total et avec presence
+        tab1 <<- data.frame(annee,val=coefannee,  ## tab1 table pour la realisation des figures / table for the graphical outputs  ### 2EME POUR GRAPH ici ce sont le coef de regress annee en fonction des annéés alors que tab3 c'est les abondance en fct des années et tab2 nombre de carré total et avec presence
                            LL=ic_inf_sim,UL=ic_sup_sim,
                            catPoint=ifelse(pval<seuilSignif,"significatif",NA),pval,
                            courbe=vpan[1],
@@ -156,13 +156,13 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
 
 
         ## tabAn table de sauvegarde des resultats par année / table of the results per year ######  reprends bcp de tabl DIFFERENCE AVEC tab2  c les abondances relatives, alors que nb de carre, nb de carre presnce, p val sont aussi ds tab2
-        tabAn <- data.frame(id,code_espece=sp, nom_espece = nomSp,indicateur = indic,annee = tab1$annee,
+        tabAn <<- data.frame(id,code_espece=sp, nom_espece = nomSp,indicateur = indic,annee = tab1$annee,
                             abondance_relative=round(tab1$val,3),
                             IC_inferieur = round(tab1$LL,3), IC_superieur = round(tab1$UL,3),
                             erreur_standard = round(erreurannee1,4),
                             p_value = round(tab1$pval,3),significatif = !is.na(tab1$catPoint),
                             nb_carre,nb_carre_presence,abondance=abond)
-        
+         
         ## GLM pour calcul des tendance generale sur la periode avec modele log lineaire / GLM to measure the tendency of population evolution on the studied period with log linear model
         formule <- as.formula(paste("abond~ as.factor(carre) + annee",sep="")) ### 
           #  browser()
@@ -207,7 +207,7 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
         }
         
         ## tab1t table utile pour la realisation des figures  / table used for the figures
-        tab1t <- data.frame(Est=trend,
+        tab1t <<- data.frame(Est=trend,
                             LL , UL,
                             pourcent=pourcentage,signif=pval<seuilSignif,pval)
         
@@ -246,7 +246,7 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
         if(assessIC)  catEBCC <- affectCatEBCC(trend = as.vector(trend),pVal = pval,ICinf=as.vector(LL),ICsup=as.vector(UL)) else catEBCC <- NA
         ## table complete de resultats  pour la periode etudiée / complete table with results for the studied period
      #   browser()
-        tabTrend <- data.frame(
+        tabTrend <<- data.frame(
             id,code_espece=sp,nom_espece = nomSp,indicateur = indic,
             nombre_annees = pasdetemps,premiere_annee = firstY,derniere_annee = lastY,
             tendance = as.vector(trend) ,  IC_inferieur=as.vector(LL) , IC_superieur = as.vector(UL),pourcentage_variation=as.vector(pourcent),
@@ -274,10 +274,10 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
         if(figure) {
             ## table complete pour la figure en panel par ggplot2
             ## table pour graphe en panel par ggplot2
-            if(description)	dgg <- rbind(tab1,tab2,tab3) else dgg <- tab1
+            if(description)	dgg <<- rbind(tab1,tab2,tab3) else dgg <<- tab1
             ## les figures     
             
-            ggplot.espece(dgg,tab1t,id,serie=NULL,sp,valide=catIncert,nomSp,description,tendanceSurFigure,seuilOccu=14,vpan = vpan)
+            ggplot.espece(dgg,tab1t,id,serie=NULL,sp,valide=catIncert,nomSp,description,tendanceSurFigure,seuilOccu=14,vpan = vpan,assessIC=assessIC)
             
         }
         
@@ -338,12 +338,12 @@ affectCatEBCC <- function(trend,pVal,ICinf,ICsup){
 
 ############################################################################################################ fonction graphique appelée par main.glm / function called by main.glm for graphical output
 ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,description=TRUE,
-                          tendanceSurFigure=TRUE,seuilOccu=14, vpan) {
+                          tendanceSurFigure=TRUE,seuilOccu=14, vpan,assessIC=TRUE) {
   
   #  serie=NULL;nomSp=NULL;description=TRUE;valide=catIncert
   #  tendanceSurFigure=TRUE;seuilOccu=14
   require(ggplot2)
-  
+
   figname<- paste("Output/",id,"/",ifelse(valide=="Incertain","Incertain/",""),
                   sp,"_",id,serie, ".png",
                   sep = "")
@@ -392,8 +392,11 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     p <- p + geom_hline(data =hline.data,mapping = aes(yintercept=z, colour = couleur,linetype=type ),
                         alpha=1,size=1.2)
     
-    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
-    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
+  if(assessIC) {
+    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) #################  LA discrete value alors que continu
+    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) ####### LA discrete
+    
+  } 
     p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
     p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
     p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
@@ -415,8 +418,11 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     p <- p + geom_hline(data =subset(hline.data,panel=="Variation abondance"),mapping = aes(yintercept=z, colour = couleur,linetype=type ),
                         alpha=1,size=1.2)
     
-    p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
-    p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
+    if(assessIC) {
+      p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) #################  LA discrete value alors que continu
+      p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) ####### LA discrete
+      
+    }
     p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
     p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
     p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
