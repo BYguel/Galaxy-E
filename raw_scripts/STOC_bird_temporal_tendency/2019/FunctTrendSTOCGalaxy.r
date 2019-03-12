@@ -506,10 +506,16 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
   ## texte de la tendance / text for the population evolution trend
   tab1 <- subset(dgg,panel =="Variation abondance")
   pasdetemps <- max(dgg$annee) - min(dgg$annee) + 1
-  txtPente1 <- paste(tab1t$Est,
+  if(assessIC){
+      txtPente1 <- paste(tab1t$Est,
                      ifelse(tab1t$signif," *",""),"  [",tab1t$LL," , ",tab1t$UL,"]",
                      ifelse(tab1t$signif,paste("\n",ifelse(tab1t$pourcent>0,"+ ","- "),
                                                abs(tab1t$pourcent)," % en ",pasdetemps," ans",sep=""),""),sep="")
+  }else{
+       txtPente1 <- ifelse(tab1t$signif,paste("\n",ifelse(tab1t$pourcent>0,"+ ","- "),
+                                               abs(tab1t$pourcent)," % en ",pasdetemps," ans",sep=""),"")
+ 
+  }
   ## table du texte de la tendance / table of the text for the population evolution trend
   tabTextPent <- data.frame(y=c(max(c(tab1$val,tab1$UL),na.rm=TRUE)*.9),
                             x=median(tab1$annee),
