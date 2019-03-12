@@ -426,7 +426,7 @@ main.glm <- function(id="france",donneesAll=dataCLEAN,assessIC= TRUE,listSp=sp,t
             if(description)	dgg <- rbind(tab1,tab2,tab3) else dgg <- tab1
             ## les figures     
             
-            ggplot.espece(dgg,tab1t,id,serie=NULL,sp,valide=catIncert,nomSp,description,tendanceSurFigure,seuilOccu=14,vpan = vpan)
+            ggplot.espece(dgg,tab1t,id,serie=NULL,sp,valide=catIncert,nomSp,description,tendanceSurFigure,seuilOccu=14,vpan = vpan,assessIC=assessIC)
             
         }
         
@@ -487,7 +487,7 @@ affectCatEBCC <- function(trend,pVal,ICinf,ICsup){
 
 ############################################################################################################ fonction graphique appelée par main.glm / function called by main.glm for graphical output
 ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,description=TRUE,
-                          tendanceSurFigure=TRUE,seuilOccu=14, vpan) {
+                          tendanceSurFigure=TRUE,seuilOccu=14, vpan,assessIC=TRUE) {
   
   #  serie=NULL;nomSp=NULL;description=TRUE;valide=catIncert
   #  tendanceSurFigure=TRUE;seuilOccu=14
@@ -540,9 +540,10 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
       scale_x_continuous(breaks=min(dgg$annee):max(dgg$annee))
     p <- p + geom_hline(data =hline.data,mapping = aes(yintercept=z, colour = couleur,linetype=type ),
                         alpha=1,size=1.2)
-    
+   if(assessIC){ ############# ONLY FOR THE CONFIDENCE INTERVAL
     p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
     p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
+	}
     p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
     p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
     p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
@@ -564,8 +565,10 @@ ggplot.espece <- function(dgg,tab1t,id,serie=NULL,sp,valide,nomSp=NULL,descripti
     p <- p + geom_hline(data =subset(hline.data,panel=="Variation abondance"),mapping = aes(yintercept=z, colour = couleur,linetype=type ),
                         alpha=1,size=1.2)
     
+   if(assessIC){ ############# ONLY FOR THE CONFIDENCE INTERVAL
     p <- p + geom_ribbon(mapping=aes(ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2) 
     p <- p + geom_pointrange(mapping= aes(y=val,ymin=LL,ymax=UL),fill=col[vpan[1]],alpha=.2)
+	}
     p <- p + geom_line(mapping=aes(colour=courbe),size = 1.5)
     p <- p + geom_point(mapping=aes(colour=courbe),size = 3)
     p <- p + geom_point(mapping=aes(colour=catPoint,alpha=ifelse(!is.na(catPoint),1,0)),size = 2)
