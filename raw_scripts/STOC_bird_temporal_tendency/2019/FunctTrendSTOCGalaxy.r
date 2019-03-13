@@ -9,6 +9,16 @@
 #### Based on Romain Lorrillière R script
 #### Modified by Alan Amosse and Benjamin Yguel for integrating within Galaxy-E
 
+##### workes with the R version 3.5.1 (2018-07-02)
+##### Package used with the version:
+#suppressMessages(library(lme4))  version 1.1.18.1
+#suppressMessages(library(ggplot2))  version 3.0.0
+#suppressMessages(library(speedglm))  version 0.3.2
+#suppressMessages(library(arm))  version 1.10.1
+#suppressMessages(library(reshape))  version 0.8.8
+#suppressMessages(library(data.table))  version 1.12.0
+#suppressMessages(library(reshape2))   version 1.4.3
+
 
 
 ######################################### debut de la fonction makeTableAnalyse / stard of the function makeTableAnalyse
