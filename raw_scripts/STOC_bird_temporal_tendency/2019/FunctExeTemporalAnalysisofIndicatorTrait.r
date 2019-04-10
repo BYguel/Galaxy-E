@@ -35,15 +35,19 @@ suppressMessages(library(lmerTest))  ##Version: 3.1-0
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args)!=5) {
-    stop("At least 5 arguments must be supplied :\n- An input dataset filtered (.tabular). May come from the filter rare species tool.\n- A species detail table (.tabular)\n- A species ssi/sti table.\n- A table with plots coordinates.\n- table with csi calculated before 2001.\n\n", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
+if (length(args)!=7) {
+    stop("At least 7 arguments must be supplied :\n- An input dataset filtered (.tabular). May come from the filter rare species tool.\n- A species detail table (.tabular)\n- A species ssi/sti table.\n- A table with plots coordinates.\n- table with csi calculated before 2001.\n\n", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
 } else {
     Datafiltered<-args[1] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"    
     tabSpecies<-args[2] ###### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec specialisation à l'habitat des especes et si espece considérée comme indicatrice / file name without the file type ".filetype", file available in Galaxy-E containing habitat specialization for each species and whether or not they are considered as indicator  
     tabtrait<-args[3] ##### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec degre de specialisation de l espece et affinite thermique /file name without the file type ".filetype", file available in Galaxy-E containing specilalization degree as well as thermic preferences
-    coordCarre<-[4] #### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec les coordonnees gps des carres /file name without the file type ".filetype", file available in Galaxy-E containing gps coordinates of the plots
-	csibefore2001<-[5] #### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec les calcul de csi avant 2001 sur base de données différentes / file name without the file type ".filetype", file available in Galaxy-E containing csi calculated for years before 2001
-	dd <- [6] ##### Nom du fichier si déjà un fichier avec trait moyen par communauté, avec une colonne annee appelé "year" et une colonne plot appelé "carre" correspondant à l'echelle des communautés etudiées / name of the file if a file with the mean trait value per community is already prepared with one column named "year" for the year, one column named "carre" for the plots (the scale of the community measurment)
+    coordCarre<-args[4] #### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec les coordonnees gps des carres /file name without the file type ".filetype", file available in Galaxy-E containing gps coordinates of the plots
+	Var <- args[5] #### Nom du trait dans fichier de traits "nomdutrait" exemple: "ssi" pour l'indice de specialisation par sps / Name of the trait in the file containing trait data   
+indicator <- args[6] #### Nom de l'indicateur ou du trait par communauté ex pour ssi c'est csi calculé au niveau communauté / Name of the indicator or the trait per community ex: for the ssi, it is the csi measured at the community level  
+ methode <- args[7] #### Methode d'analyse de l'evolution du trait ou de l'indicateur, lmer pour modèloe mixte seul ou gam pour generalized additive model / name of the models used to analyze evolution of mean trait or indicator
+dd <- args[8] ##### Nom du fichier si déjà un fichier avec trait moyen par communauté, avec une colonne annee appelé "year" et une colonne plot appelé "carre" correspondant à l'echelle des communautés etudiées / name of the file if a file with the mean trait value per community is already prepared with one column named "year" for the year, one column named "carre" for the plots (the scale of the community measurment)
+ csibefore2001<-args[9] #### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec les calcul de csi avant 2001 sur base de données différentes / file name without the file type ".filetype", file available in Galaxy-E containing csi calculated for years before 2001
+	
 }
 
 
@@ -51,13 +55,29 @@ if (length(args)!=5) {
 tabCLEAN <- read.table(Datafiltered,sep="\t",dec=".",header=TRUE) #### charge le fichier de données d abondance / load abundance of species
 tabsp <- read.table(tabSpecies,sep="\t",dec=".",header=TRUE)   #### charge le fichier de donnees sur nom latin, vernaculaire et abbreviation, espece indicatrice ou non / load the file with information on species specialization and if species are indicators
 
+vars_tabCLEAN<-c("carre","annee","espece","abond")
+err_msg_tabCLEAN<-"The input dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- carre\n- annee\n- espece\n- abond\n"
+
+vars_tabsp<-c("espece","nom","nomscientific","indicateur","specialisation")
+err_msg_tabsp<-"\nThe species dataset filtered doesn't have the right format. It need to have the following 4 variables :\n- espece\n- nom\n- nomscientific\n- indicateur\n- specialisation\n"
+
+check_file(tabCLEAN,err_msg_tabCLEAN,vars_tabCLEAN,4)
+check_file(tabsp,err_msg_tabsp,vars_tabsp,5)
+
+if(!dd=NULL){
+vars_dd<-c("carre","year","longitude_grid_wgs84","latitude_grid_wgs84","indic")  #### si vous avez déjà votre tableau d'analyse indic correspond au trait moyen par communauté ou au calcul de l'indicateur
+err_msg_dd<-"\nThe dataset for analysis doesn't have the right format. It need to have the following 5 variables :\n- carre\n- year\n- longitude_grid_wgs84\n- latitude_grid_wgs84\n- indic\n"
+check_file(dd,err_msg_dd,vars_dd,5)
+}
+
 spTrait=read.csv2("tabtrait") ############# species_indicateur_fonctionnel.csv pour le STOC sinon fichier avec traits pour calcul du trait moyen par communauté / file with the trait for the community weighted mean calculation 
 coordCarre=read.csv2("coordCarre") ######## carre.csv  charge les coordonnées des carrés qui sont utilisés comme covariable  / load the gps coordinates of the plots, is used as covariable in the models
 csibefore2001=read.csv2("csibefore2001")##### csi_init.csv  
 
 dd <- read.table(dd,sep="\t",dec=".",header=TRUE) #### charge le fichier pour analyse si déjà construit (voir ci dessus pour les détails ) / load the required file for the analysis if already prepared (see above for details)
 
-
+dir.create(paste("Output/",id,sep=""),recursive=TRUE,showWarnings=FALSE)##### Creation du dossier de sortie
+cat(paste("Create Output/",id,"\n",sep=""))
 
 ############################# The function
 
@@ -341,7 +361,7 @@ coefdata.f$se.sup <- ggdata$se.sup
             #gg <<- ggplot(ggdata,aes(x=year,y=estimate))+ geom_ribbon(ymin=ggdata$se.infR,ymax=ggdata$se.supR,alpha=.25)+geom_errorbar(ymin=ggdata$se.infR,ymax=ggdata$se.supR,width=0,alpha=.25)+ geom_point() + geom_line() + ylim(min(ggdata$se.infR),max(ggdata$se.supR)) + labs(x="Years",y=paste(indic," variation",sep="")) #####  AVEC INTERVAL ROMAIN
 			gg <<- ggplot(ggdata,aes(x=year,y=estimate))+ geom_ribbon(ymin=ggdata$se.inf,ymax=ggdata$se.sup,alpha=.25)+geom_errorbar(ymin=ggdata$se.inf,ymax=ggdata$se.sup,width=0,alpha=.25)+ geom_point() + geom_line() + ylim(min(ggdata$se.inf),max(ggdata$se.sup)) + labs(x="Years",y=paste(indicator," variation",sep="")) #####
 
-            ggfile <- paste("output/",indicator,id,".png",sep="")
+            ggfile <- paste("Output/",indicator,id,".png",sep="")
             ggsave(ggfile,gg)
 
 
@@ -366,7 +386,7 @@ write.csv(coefdata,paste("Output/lmer_coefficient_",indicator,id,".csv",sep=""),
 write.csv(ggdata,paste("Output/ggdata_",indicator,id,".csv",sep=""),row.names=FALSE)
 
 
-            smd.file <- paste("output/summary_lmer_",indicator,"_",id,".txt",sep="")
+            smd.file <- paste("Output/summary_lmer_",indicator,"_",id,".txt",sep="")
 
 
 
