@@ -372,7 +372,7 @@ coefdata.f$se.sup <- ggdata$se.sup
 ############ Estimation de la tendance sur la periode étudiée  / Trends estimation on the time period studied
 			cat("\nEstimation de la tendance lmer(",indicator,"~ year+(1|id_plot)\n",sep="")
            browser()
-			md.c <- lmer(indic~ year+(1|id_plot),data=dd)##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept ### version lmer
+			#md.c <- lmer(indic~ year+(1|id_plot),data=dd)##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept ### version lmer
 			md.c <- glmTMB(indic~ year+(1|id_plot),data=dd,family=poisson)
             smd.c<-summary(md.c)
             # coefdata.c <-  as.data.frame(smd.c$coefficients) #### pour la version lmer
