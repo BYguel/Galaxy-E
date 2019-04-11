@@ -26,7 +26,7 @@ suppressMessages(library(visreg))  ##Version: 2.5-0
 suppressMessages(library(plyr))  ##Version: 1.8.4
 suppressMessages(library(lme4))  ##Version: 1.1-18-1
 suppressMessages(library(lmerTest))  ##Version: 3.1-0
-
+suppressMessages(library(glmmTMB))) ###Version: 0.2.3
 
 
 
@@ -333,14 +333,18 @@ if (methode == "lmer") {
    ### Utilisation des modèles mixtes pour obtenir les tendances d evolution par an du csi cti ou ctri / Use of mixte model for the estimation of the annual variations of the csi cti or ctri 
             cat("\nEstimation de la variation annuelle lmer(",indicator,"~ factor(year)+(1|id_plot)\n",sep="")
            
-			md.f <- lmer(indic~ factor(year)+(1|id_plot),data=dd)  ##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept 
+			#md.f <- lmer(indic~ factor(year)+(1|id_plot),data=dd)  ##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept 
+			md.f <- glmmTMB((indic~ factor(year)+(1|id_plot),data=d,family=poisson) 
+
 
             smd.f<-summary(md.f)    
-            coefdata.f <-  as.data.frame(smd.f$coefficients)
+            # coefdata.f <-  as.data.frame(smd.f$coefficients)  ### version pour sortie lmer()
+			coefdata.f <-  as.data.frame(smd.f$coefficients$cond)
             coefdata.f <- data.frame(model="Annual fluctuation", variable = rownames(coefdata.f),coefdata.f)
 
-            ggdata <<- data.frame(year=c(1989,as.numeric(substr(coefdata.f$variable[-1],13,16))),
-                                 estimate=c(0,coefdata.f$Estimate[-1]),
+            # ggdata <<- data.frame(year=c(1989,as.numeric(substr(coefdata.f$variable[-1],13,16))),##### version pour sortie lmer()
+             ggdata <<- data.frame(year=c(1989,as.numeric(substr(coefdata.f$variable[-1],14,17))),             
+			 estimate=c(0,coefdata.f$Estimate[-1]),
                                  se=c(0,coefdata.f$Std..Error[-1]))   #####################  resultat du modèle / results of the models
             #ggdata$estimate <-  ggdata$estimate
              #ggdata$se.supR <- ggdata$estimate +  ggdata$se ############################################################################## METHODE ROMAIN 
@@ -351,9 +355,9 @@ if (methode == "lmer") {
 		
 		prof <- profile(md.f)  #### Nouvel interval de confiance avec utilisation du logarithme des ecarts types / logarithms of standard deviations are used, while varianceProf converts from the standard-deviation to the variance scale
 		MODconfint <- confint(prof) #### plus rapide de passer par la fonction profile mais pas indispensable fonctionne aussi directement sur modele mixte md.f  / more rapid using both function profile and confint but works also directly on output of the model 
-		se.sup <- MODconfint[2:nban+2,2]
+		se.sup <- MODconfint[2:nban,2]#### [2:nban+2,2] version pour sortie lmer()
 		ggdata$se.sup <- c(0,se.sup) 
-		se.inf <- MODconfint[2:nban+2,1]
+		se.inf <- MODconfint[2:nban,1]#### [2:nban+2,2] version pour sortie lmer()
         ggdata$se.inf <- c(0,se.inf)   			
 coefdata.f$se.inf <- ggdata$se.inf
 coefdata.f$se.sup <- ggdata$se.sup
@@ -366,17 +370,17 @@ coefdata.f$se.sup <- ggdata$se.sup
 
 
 ############ Estimation de la tendance sur la periode étudiée  / Trends estimation on the time period studied
-			cat("\nEstimation de la tendance lmer(",indicator,"~ factor(year)+(1|id_plot)\n",sep="")
+			cat("\nEstimation de la tendance lmer(",indicator,"~ year+(1|id_plot)\n",sep="")
            browser()
-			md.c <- lmer(indic~ year+(1|id_plot),data=dd)##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept 
-      
+			md.c <- lmer(indic~ year+(1|id_plot),data=dd)##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept ### version lmer
+			md.c <- glmTMB(indic~ year+(1|id_plot),data=dd,family=poisson)
             smd.c<-summary(md.c)
-
-            coefdata.c <-  as.data.frame(smd.c$coefficients)
+            # coefdata.c <-  as.data.frame(smd.c$coefficients) #### pour la version lmer
+            coefdata.c <-  as.data.frame(smd.c$coefficients$cond)[2,]
 profc=profile(md.c) ######### Ajout des intervalles de confiances / addition of the confidence intervals
 MODconfint=confint(profc)
-se.inf=MODconfint[4,1]
-se.sup=MODconfint[4,2]
+se.inf=MODconfint[2,1]### [4,1] pour la version lmer
+se.sup=MODconfint[2,2]### [4,2] pour la version lmer
 			coefdata.c <- data.frame(model = "Linear trend", variable = rownames(coefdata.c),coefdata.c,se.inf,se.sup)
 
             coefdata <- rbind(coefdata.c,coefdata.f)
