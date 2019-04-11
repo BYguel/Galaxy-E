@@ -89,7 +89,7 @@ csi_cti_ctri <- function(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait
                           champSp = "code_sp", sp=NULL,champsHabitat=FALSE, #### Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
                           anglais=FALSE,seuilSignif=0.05,##### #### anglais=FALSE Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
                           couleur="#4444c3",
-                          titreY=indic,titreX="Années",titre=indic,
+                          titreY=indicator,titreX="Années",titre=indic,
                           savePostgres=FALSE,output=FALSE,   ##### OPTION "output" pour afficher le resultat dans R  / OPTION "output" is only to show the result in the R window 
                           operateur=c("Lorrilliere Romain","lorrilliere@mnhn.fr"), encodingSave="ISO-8859-1",fileName="dataCSI",id="France"){ ####### nom des fichiers de sorties et de l'operateur / name of the output files and of the operator
 
