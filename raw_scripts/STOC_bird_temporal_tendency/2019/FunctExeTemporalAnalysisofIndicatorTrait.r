@@ -27,7 +27,7 @@ suppressMessages(library(plyr))  ##Version: 1.8.4
 suppressMessages(library(lme4))  ##Version: 1.1-18-1
 suppressMessages(library(lmerTest))  ##Version: 3.1-0
 
-
+source("FunctMainGlmGalaxy.r")
 
 
 ###########
@@ -35,8 +35,8 @@ suppressMessages(library(lmerTest))  ##Version: 3.1-0
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args)!=7) {
-    stop("At least 7 arguments must be supplied :\n- An input dataset filtered (.tabular). May come from the filter rare species tool.\n- A species detail table (.tabular)\n- A species ssi/sti table.\n- A table with plots coordinates.\n- table with csi calculated before 2001.\n\n", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
+if (length(args)!=12) {
+    stop("At least 12 arguments must be supplied :\n- An input dataset filtered (.tabular). May come from the filter rare species tool.\n- A species detail table (.tabular)\n- A species ssi/sti table.\n- A table with plots coordinates.\n- Name of trait. eg : ssi.\n- Indicator. eg : csi.\n- Method lmer or gam.\n- DD file if exists.\n- Table with csi calculated before 2001.\n- Id name for output repo.\n- Use plot smooth option TRUE/FALSE.\n- Compute confidence interval TRUE/FALSE.\n\n", call.=FALSE) #si pas d'arguments -> affiche erreur et quitte / if no args -> error and exit1
 } else {
     Datafiltered<-args[1] ###### Nom du fichier avec extension ".typedefichier", peut provenir de la fonction "FiltreEspeceRare" / file name without the file type ".filetype", may result from the function "FiltreEspeceRare"    
     tabSpecies<-args[2] ###### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec specialisation à l'habitat des especes et si espece considérée comme indicatrice / file name without the file type ".filetype", file available in Galaxy-E containing habitat specialization for each species and whether or not they are considered as indicator  
@@ -47,6 +47,9 @@ if (length(args)!=7) {
     methode <- args[7] #### Methode d'analyse de l'evolution du trait ou de l'indicateur, lmer pour modèloe mixte seul ou gam pour generalized additive model / name of the models used to analyze evolution of mean trait or indicator
     dd <- args[8] ##### Nom du fichier si déjà un fichier avec trait moyen par communauté, avec une colonne annee appelé "year" et une colonne plot appelé "carre" correspondant à l'echelle des communautés etudiées / name of the file if a file with the mean trait value per community is already prepared with one column named "year" for the year, one column named "carre" for the plots (the scale of the community measurment)
     csibefore2001<-args[9] #### Nom du fichier avec extension ".typedefichier", fichier mis à disposition dans Galaxy-E avec les calcul de csi avant 2001 sur base de données différentes / file name without the file type ".filetype", file available in Galaxy-E containing csi calculated for years before 2001
+    id<-args[10]#Id name for output res repo 
+    plot_smooth<-args[11]#TRUE or FALSE
+    ic<-args[12]#TRUE or FALSE
 }
 
 
@@ -63,17 +66,24 @@ err_msg_tabsp<-"\nThe species dataset filtered doesn't have the right format. It
 check_file(tabCLEAN,err_msg_tabCLEAN,vars_tabCLEAN,4)
 check_file(tabsp,err_msg_tabsp,vars_tabsp,5)
 
-if(!dd=NULL){
-vars_dd<-c("carre","year","longitude_grid_wgs84","latitude_grid_wgs84","indic")  #### si vous avez déjà votre tableau d'analyse indic correspond au trait moyen par communauté ou au calcul de l'indicateur
-err_msg_dd<-"\nThe dataset for analysis doesn't have the right format. It need to have the following 5 variables :\n- carre\n- year\n- longitude_grid_wgs84\n- latitude_grid_wgs84\n- indic\n"
-check_file(dd,err_msg_dd,vars_dd,5)
+if(!dd==""){
+    vars_dd<-c("carre","year","longitude_grid_wgs84","latitude_grid_wgs84","indic")  #### si vous avez déjà votre tableau d'analyse indic correspond au trait moyen par communauté ou au calcul de l'indicateur
+    err_msg_dd<-"\nThe dataset for analysis doesn't have the right format. It need to have the following 5 variables :\n- carre\n- year\n- longitude_grid_wgs84\n- latitude_grid_wgs84\n- indic\n"
+    check_file(dd,err_msg_dd,vars_dd,5)
+    dd <- read.table(dd,sep="\t",dec=".",header=TRUE) #### charge le fichier pour analyse si déjà construit (voir ci dessus pour les détails ) / load the required file for the analysis if already prepared (see above for details)
+}else{
+    dd<-NULL
 }
 
-spTrait=read.csv2("tabtrait") ############# species_indicateur_fonctionnel.csv pour le STOC sinon fichier avec traits pour calcul du trait moyen par communauté / file with the trait for the community weighted mean calculation 
-coordCarre=read.csv2("coordCarre") ######## carre.csv  charge les coordonnées des carrés qui sont utilisés comme covariable  / load the gps coordinates of the plots, is used as covariable in the models
-csibefore2001=read.csv2("csibefore2001")##### csi_init.csv  
+spTrait=read.table(tabtrait,sep="\t",dec=".",header=TRUE) ############# species_indicateur_fonctionnel.csv pour le STOC sinon fichier avec traits pour calcul du trait moyen par communauté / file with the trait for the community weighted mean calculation 
+coordCarre=read.table(coordCarre,sep="\t",dec=".",header=TRUE) ######## carre.csv  charge les coordonnées des carrés qui sont utilisés comme covariable  / load the gps coordinates of the plots, is used as covariable in the models
 
-dd <- read.table(dd,sep="\t",dec=".",header=TRUE) #### charge le fichier pour analyse si déjà construit (voir ci dessus pour les détails ) / load the required file for the analysis if already prepared (see above for details)
+if(!csibefore2001==""){
+    #TODO check_file(csibefore2001)
+    csibefore2001=read.csv2(csibefore2001)##### csi_init.csv  
+}else{
+    csibefore2001<-NULL
+}
 
 dir.create(paste("Output/",id,sep=""),recursive=TRUE,showWarnings=FALSE)##### Creation du dossier de sortie
 cat(paste("Create Output/",id,"\n",sep=""))
@@ -82,15 +92,15 @@ cat(paste("Create Output/",id,"\n",sep=""))
 
 
 csi_cti_ctri <- function(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait,dd=NULL,ic=TRUE, Var="ssi",indicator="csi", methode="gam", ####### Var= nom du trait dans le fichier de trait (pour le calcul du csi, le trait est ssi par exemple); Indicator= nom de l'indicateur ou du trait moyen par communauté ; methode: choisir modele "gam" ou "lmer" ; ic pour calcul de l'interval de confiance plus rapide sans mais moins fiable / Var=name of the trait in the trait file; Indicator= name of the indicator or of the community weighted mean trait used in graphical output and output files; methode is the statistical model use for the analysis "gam" or "lmer" ; ic is for the calculation of confidence interval faster without but less reliable
-                              firstYear=NULL,lastYear=NULL,altitude=800,departement=NULL,onf=TRUE,distance_contact=NULL, #### altitude, departement onf, distance de contact = Argument non utilise, se trouvait dans requete sql / altitude, departement onf, distance de contact = not use anymore was in a postgres request
-                             spExcluPassage1=c("MOTFLA","SAXRUB","ANTPRA","OENOEN","PHYTRO"),# (Prince et al. 2013 Env. Sc. and Pol.) + "OENOEN","PHYTRO" avis d'expert F. Jiguet, #### Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
-                             seuilAbondance=.99,init_1989 = FALSE,plot_smooth=TRUE, ###### init_1989 si TRUE, option que pour csi et besoin du fichier des csi calculés sur les données avant 2001 (pas forcement fiable car protocole un peu different) / init_1989 if TRUE, only working for csi, and use calculation of csi based on data before 2001 (protocol was bit different, not totally reliable)
-                              champSp = "code_sp", sp=NULL,champsHabitat=FALSE, #### Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
-                              anglais=FALSE,seuilSignif=0.05,##### #### anglais=FALSE Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
-                              couleur="#4444c3",
-                              titreY=indic,titreX="Années",titre=indic,
-                              savePostgres=FALSE,output=FALSE,   ##### OPTION "output" pour afficher le resultat dans R  / OPTION "output" is only to show the result in the R window 
-                              operateur=c("Lorrilliere Romain","lorrilliere@mnhn.fr"), encodingSave="ISO-8859-1",fileName="dataCSI",id="France"){ ####### nom des fichiers de sorties et de l'operateur / name of the output files and of the operator
+firstYear=NULL,lastYear=NULL,altitude=800,departement=NULL,onf=TRUE,distance_contact=NULL, #### altitude, departement onf, distance de contact = Argument non utilise, se trouvait dans requete sql / altitude, departement onf, distance de contact = not use anymore was in a postgres request
+spExcluPassage1=c("MOTFLA","SAXRUB","ANTPRA","OENOEN","PHYTRO"),# (Prince et al. 2013 Env. Sc. and Pol.) + "OENOEN","PHYTRO" avis d'expert F. Jiguet, #### Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
+seuilAbondance=.99,init_1989 = FALSE,plot_smooth=TRUE, ###### init_1989 si TRUE, option que pour csi et besoin du fichier des csi calculés sur les données avant 2001 (pas forcement fiable car protocole un peu different) / init_1989 if TRUE, only working for csi, and use calculation of csi based on data before 2001 (protocol was bit different, not totally reliable)
+champSp = "code_sp", sp=NULL,champsHabitat=FALSE, #### Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
+anglais=FALSE,seuilSignif=0.05,##### #### anglais=FALSE Argument non utilise, se trouvait dans requete sql / not use anymore was in a postgres request
+couleur="#4444c3",
+titreY=indic,titreX="Années",titre=indic,
+savePostgres=FALSE,output=FALSE,   ##### OPTION "output" pour afficher le resultat dans R  / OPTION "output" is only to show the result in the R window 
+operateur=c("Lorrilliere Romain","lorrilliere@mnhn.fr"), encodingSave="ISO-8859-1",fileName="dataCSI",id="France"){ ####### nom des fichiers de sorties et de l'operateur / name of the output files and of the operator
     
     start <- Sys.time()
     dateExport <- format(start,"%Y-%m-%d")
@@ -172,14 +182,13 @@ csi_cti_ctri <- function(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait
             realYear <- sort(unique(dd$year))
             fit<-as.vector(preds$fit)
             init <- fit[1]
-            # fit.up95<-fit-1.96*as.vector(preds$se.fit)    ###########  not use anymore
-            # fit.low95<-fit+1.96*as.vector(preds$se.fit)
+            fit.up95<-fit-1.96*as.vector(preds$se.fit)    ###########  not use anymore
+            fit.low95<-fit+1.96*as.vector(preds$se.fit)
             # ggGamData <- data.frame(year=year, csi=fit,ic_low95 = fit.low95, ic_up95 = fit.up95)
             fit <- fit - init
             fit.up95 <- fit.up95 - init
             fit.low95 <- fit.low95 - init
             ggGamData <- data.frame(year=year, indic=fit,ic_low95 = fit.low95, ic_up95 = fit.up95)  ####### Recupère les resultats des modèles / retrieve the results of the models 
-     
             ## The ggplot:
             ###browser()
             gg <- ggplot(data=ggGamData,aes(x=year,y=indic))
@@ -301,4 +310,4 @@ csi_cti_ctri <- function(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait
 ################## 
 ###  Do your analysis
 
-csi_cti_ctri(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait,dd=NULL,Var="ssi",indicator="csi",ic=TRUE,plot_smooth = TRUE,methode="lmer")  ##### exemple pour l'indicateur csi sans csi déjà calculé donc à partir du ssi avec interval de confiance et utilisant modele mixte / example for the csi index which is not already calculated from the ssi with confidence interval using the mixte model 
+csi_cti_ctri(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait,dd=dd,Var=Var,indicator=indicator,ic=ic,plot_smooth=plot_smooth,methode=methode)  ##### exemple pour l'indicateur csi sans csi déjà calculé donc à partir du ssi avec interval de confiance et utilisant modele mixte / example for the csi index which is not already calculated from the ssi with confidence interval using the mixte model 
