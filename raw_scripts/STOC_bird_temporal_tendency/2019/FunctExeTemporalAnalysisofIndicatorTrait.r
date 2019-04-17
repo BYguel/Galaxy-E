@@ -334,7 +334,7 @@ if (methode == "lmer") {
             cat("\nEstimation de la variation annuelle lmer(",indicator,"~ factor(year)+(1|id_plot)\n",sep="")
            
 			#md.f <- lmer(indic~ factor(year)+(1|id_plot),data=dd)  ##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept 
-			md.f <- glmmTMB((indic~ factor(year)+(1|id_plot),data=d,family=poisson) 
+			md.f <- glmmTMB((indic~ factor(year)+(1|id_plot),data=d,family=nbinom1) 
 
 
             smd.f<-summary(md.f)    
@@ -373,7 +373,7 @@ coefdata.f$se.sup <- ggdata$se.sup
 			cat("\nEstimation de la tendance lmer(",indicator,"~ year+(1|id_plot)\n",sep="")
            browser()
 			#md.c <- lmer(indic~ year+(1|id_plot),data=dd)##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept ### version lmer
-			md.c <- glmTMB(indic~ year+(1|id_plot),data=dd,family=poisson)
+			md.c <- glmTMB(indic~ year+(1|id_plot),data=dd,family=nbinom1)
             smd.c<-summary(md.c)
             # coefdata.c <-  as.data.frame(smd.c$coefficients) #### pour la version lmer
             coefdata.c <-  as.data.frame(smd.c$coefficients$cond)[2,]
