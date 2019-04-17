@@ -214,9 +214,9 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
             fit<-as.vector(preds$fit)
             init <- fit[1]
 
-            # fit.up95<-fit-1.96*as.vector(preds$se.fit)    ###########  not use anymore
+            fit.up95<-fit-1.96*as.vector(preds$se.fit)    ###########  not use anymore
 
-            # fit.low95<-fit+1.96*as.vector(preds$se.fit)
+            fit.low95<-fit+1.96*as.vector(preds$se.fit)
 
            # ggGamData <- data.frame(year=year, csi=fit,ic_low95 = fit.low95, ic_up95 = fit.up95)
 
@@ -288,7 +288,7 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
 
             gammc <- gamm(indic~year+s(longitude_grid_wgs84,latitude_grid_wgs84,bs="sos"), data=dd,random=reStruct(object = ~ 1| id_plot, pdClass="pdDiag"),correlation=corAR1(form=~year))### spline sur les coordonnées, effet aleatoire des carres sur ordonnée à l'origine, methode autoregressive sur l'année N-1  / spline on the gps coordinates, random effect of the plots on intercept, autoregressive method on the year-1
 
-
+			sgammc=summary(gammc$gam)
             coefannee <- sgammc$p.coeff[2]  #### coefficient de regression de la variable année / regression coefficient of the variable "year"
             ## erreur standard / standard error
             erreuran <- sgammc$se[2]
