@@ -26,7 +26,7 @@ suppressMessages(library(visreg))  ##Version: 2.5-0
 suppressMessages(library(plyr))  ##Version: 1.8.4
 suppressMessages(library(lme4))  ##Version: 1.1-18-1
 suppressMessages(library(lmerTest))  ##Version: 3.1-0
-suppressMessages(library(glmmTMB))) ###Version: 0.2.3
+suppressMessages(library(glmmTMB)) ###Version: 0.2.3
 
 
 
@@ -76,8 +76,8 @@ csibefore2001=read.csv2("csibefore2001")##### csi_init.csv
 
 dd <- read.table(dd,sep="\t",dec=".",header=TRUE) #### charge le fichier pour analyse si déjà construit (voir ci dessus pour les détails ) / load the required file for the analysis if already prepared (see above for details)
 
-dir.create(paste("Output/",id,sep=""),recursive=TRUE,showWarnings=FALSE)##### Creation du dossier de sortie
-cat(paste("Create Output/",id,"\n",sep=""))
+dir.create(paste("Output/",sep=""),recursive=TRUE,showWarnings=FALSE)##### Creation du dossier de sortie
+cat(paste("Create Output/","\n",sep=""))
 
 ############################# The function
 
@@ -106,7 +106,7 @@ if (is.null(dd)){
 
 colnames(spTrait)[colnames(spTrait) == Var] <- "trait"
 spTrait$trait <- spTrait$trait
-##browser()
+###browser()
 tabCLEAN$trait <- spTrait$trait[match(tabCLEAN$espece,spTrait$pk_species)] ### recupere donnee du trait par espece calcule  / retrieve trait data for each species 
 
 traitcarre <- aggregate(trait*abond~annee+carre,tabCLEAN,sum) ### somme des traits par annee et carre pondere par les abondances / sum of the trait per year and per plots weighted by abundances
@@ -144,11 +144,11 @@ if(methode == "gam") {
             cat("Methode: gam\n")
 			
 			
-####browser()
+##browser()
             ## Utilisation des modèles GAMM pour obtenir les tendances d evolution par an du csi cti ou ctri !!!! Marche pas si peu de données !!!!  / Use of GAMM model for the estimation of the annual variations of the csi cti or ctri  !!! does not work with few data !!! 
-            cat("\nEstimation de la variation annuelle ",indic,"~ factor(year)+s(longitude_grid_wgs84,latitude_grid_wgs84,bs='sos')\n",sep="")
+            cat("\nEstimation de la variation annuelle ",indicator,"~ factor(year)+s(longitude_grid_wgs84,latitude_grid_wgs84,bs='sos')\n",sep="")
 
-        gammf <- gamm(indic~ factor(year)+s(longitude_grid_wgs84,latitude_grid_wgs84,bs="sos"), data=dd,random=reStruct(object = ~ 1| id_plot, pdClass="pdDiag"),correlation=corAR1(form=~year)) #### spline sur les coordonnées, effet aleatoire sur les carres, methode autoregressive sur l'année N-1  / spline on the gps coordinates, random effect on the plots, autoregressive method on the year-1 
+        gammf <- gamm(indic ~ factor(year)+s(longitude_grid_wgs84,latitude_grid_wgs84,bs="sos"), data=dd,random=reStruct(object = ~ 1| id_plot, pdClass="pdDiag"),correlation=corAR1(form=~year)) #### spline sur les coordonnées, effet aleatoire sur les carres, methode autoregressive sur l'année N-1  / spline on the gps coordinates, random effect on the plots, autoregressive method on the year-1 
 
 
             sgammf<-summary(gammf$gam)
@@ -177,9 +177,19 @@ if(methode == "gam") {
 
        
 
-            tabfgamm <- data.frame(model = "gamm factor(year) plot",annee,coef=coefannee,se = erreuran,pval,signif=pval<seuilSignif,Lower_ci=ic_inf_sim,upper_ci=ic_sup_sim) #### recupère les resultats des modèles avec interval de confiance / retrieve results of the models used with confidence interval 
+            tabfgamm <- data.frame(model = "gamm factor(year) plot",annee,coef=coefannee,se = erreuran,pval,signif=pval<seuilSignif,Lower_ci=ic_inf_sim,upper_ci=ic_sup_sim,indicator=indicator) #### recupère les resultats des modèles avec interval de confiance / retrieve results of the models used with confidence interval 
+
+     
 
 
+
+        gg <- ggplot(data=tabfgamm,aes(x=annee,y=coef))
+        gg <- gg + geom_errorbar(aes(ymin=coef-se, ymax=coef+se), width=0,colour=couleur,alpha=0.5) + geom_line(size=1.5,colour=couleur)
+        gg <- gg + geom_ribbon(aes(ymin=coef-se, ymax=coef+se),fill = couleur,alpha=.2)+ geom_point(size=3,colour=couleur)+ geom_point(size=1.5,colour="white")
+        gg <- gg + labs(y="CSI",x="")+scale_x_continuous(breaks=pretty_breaks())
+
+
+        ggsave(paste("Output/fig",indicator,"_carre_",id,".png"),gg)
 
 
 
@@ -190,7 +200,7 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
             ## http://zevross.com/blog/2014/09/15/recreate-the-gam-partial-regression-smooth-plots-from-r-package-mgcv-with-a-little-style/  #### method for the plot
 
 
-            gammgg <- gamm(indic~s(year), data=dd,random=reStruct(object = ~ 1| id_plot, pdClass="pdDiag"),correlation=corAR1(form=~year))  #### spline sur l'année, effet aleatoire des carres sur ordonnée à l'origine, methode autoregressive sur l'année N-1  / spline on the year, random effect of the plots on the intercept, autoregressive method on the year-1 
+            gammgg <- gamm(indic ~ s(year), data=dd,random=reStruct(object = ~ 1| id_plot, pdClass="pdDiag"),correlation=corAR1(form=~year))  #### spline sur l'année, effet aleatoire des carres sur ordonnée à l'origine, methode autoregressive sur l'année N-1  / spline on the year, random effect of the plots on the intercept, autoregressive method on the year-1 
 
  
 
@@ -243,7 +253,7 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
             tabPredict <- subset(ggGamData,year %in% realYear)########### Tableau des resultats pour ne prendre que les valeurs d'IC pour l'année pas entre les années (spline sur annee) !!!plus utilisé!! / Table of the results not taking confidence interval between year but at each year (because of the spline of year)
             colnames(tabPredict)[1:2] <- c("annee",paste(indicator,"_predict",sep=""))
             ##tabgamm <- merge(tabfgamm,tabPredict,by="annee") #### Desactivation car merge sortie de modèles différents (le modèle dont on tire les coef de regression pour année, avec spline sur les coordonnées geo vs celui pour faire la figure avec splin sur année uniquement)  / not use anymore (as before) because use the results of the restricted model with the spline on the year while the better analysis is on full model with the spline on gps coordinates
-			tabgamm <<-  tabfgamm  #### remplace la ligne au dessus  / replace the line above
+			tabgamm <-  tabfgamm  #### remplace la ligne au dessus  / replace the line above
 
 } else {
     if(init_1989) { ########### Pour utiliser les données csi avant 2001 / in order to use csi data from before 2001
@@ -301,17 +311,17 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
             # gammc.sim <- sim(gammc)######################  VERSION ROMAIN mais fct sim() marche pas avec Gamm / old version using function sim() but did not work with Gamm models
             # ic_inf_sim <- c(0,tail(apply(coef(gammc.sim), 2, quantile,.025),pasdetemps))
             # ic_sup_sim <- c(0,tail(apply(coef(gammc.sim), 2, quantile,.975),pasdetemps))
-			icalpha05 <- as.data.frame(confint(gammc$gam))[2,1:2]  ########## VERSION BENJ
-			ic_inf_sim <- icalpha05[,1]
-			ic_sup_sim <- icalpha05[,2]
+			icalpha05 <<- as.data.frame(confint(gammc$gam))[2,1:2]  ########## VERSION BENJ
+			ic_inf_sim2 <- icalpha05[,1]
+			ic_sup_sim2 <- icalpha05[,2]
         } else
         {
-            ic_inf_sim <- "not assessed"
-            ic_sup_sim <- "not assessed"
+            ic_inf_sim2 <- "not assessed"
+            ic_sup_sim2 <- "not assessed"
         }
 
-            tabcgamm <- data.frame(model = "gamm numeric(year) plot",annee = NA,coef = coefannee,se = erreuran,pval,signif = pval<seuilSignif, indicator= NA , ic_low95 = ic_inf_sim, ic_up95 = ic_sup_sim)#### recupère les resultats des modèles avec interval de confiance / retrieve results of the models used with confidence interval
-
+            tabcgamm <- data.frame(model = "gamm numeric(year) plot",annee = NA,coef = coefannee,se = erreuran,pval,signif = pval<seuilSignif, indicator= indicator , Lower_ci = ic_inf_sim2, upper_ci = ic_sup_sim2)#### recupère les resultats des modèles avec interval de confiance / retrieve results of the models used with confidence interval
+    ########### MODIF tabcgamm en remplacant ic_low95 ic_up95 par Lower_ci et upper_ci pour coller avec les sorties des modèles "pour les stats" et non celui utilisé pour le graphe uniquement
 
             tabgamm <- tabgamm[,colnames(tabcgamm)]
 
@@ -334,16 +344,16 @@ if (methode == "lmer") {
             cat("\nEstimation de la variation annuelle lmer(",indicator,"~ factor(year)+(1|id_plot)\n",sep="")
            
 			#md.f <- lmer(indic~ factor(year)+(1|id_plot),data=dd)  ##### effet aleatoire liés aux carrés sur l'ordonnée à l'origine / random effects of plots on intercept 
-			md.f <- glmmTMB((indic~ factor(year)+(1|id_plot),data=d,family=nbinom1) 
+			md.f <- glmmTMB(indic~ factor(year)+(1|id_plot),data=d,family=nbinom1) 
 
 
-            smd.f<-summary(md.f)    
+            smd.f <- summary(md.f)    
             # coefdata.f <-  as.data.frame(smd.f$coefficients)  ### version pour sortie lmer()
 			coefdata.f <-  as.data.frame(smd.f$coefficients$cond)
             coefdata.f <- data.frame(model="Annual fluctuation", variable = rownames(coefdata.f),coefdata.f)
 
             # ggdata <<- data.frame(year=c(1989,as.numeric(substr(coefdata.f$variable[-1],13,16))),##### version pour sortie lmer()
-             ggdata <<- data.frame(year=c(1989,as.numeric(substr(coefdata.f$variable[-1],14,17))),             
+             ggdata <- data.frame(year=c(1989,as.numeric(substr(coefdata.f$variable[-1],14,17))),             
 			 estimate=c(0,coefdata.f$Estimate[-1]),
                                  se=c(0,coefdata.f$Std..Error[-1]))   #####################  resultat du modèle / results of the models
             #ggdata$estimate <-  ggdata$estimate
@@ -363,7 +373,7 @@ coefdata.f$se.inf <- ggdata$se.inf
 coefdata.f$se.sup <- ggdata$se.sup
 #browser()
             #gg <<- ggplot(ggdata,aes(x=year,y=estimate))+ geom_ribbon(ymin=ggdata$se.infR,ymax=ggdata$se.supR,alpha=.25)+geom_errorbar(ymin=ggdata$se.infR,ymax=ggdata$se.supR,width=0,alpha=.25)+ geom_point() + geom_line() + ylim(min(ggdata$se.infR),max(ggdata$se.supR)) + labs(x="Years",y=paste(indic," variation",sep="")) #####  AVEC INTERVAL ROMAIN
-			gg <<- ggplot(ggdata,aes(x=year,y=estimate))+ geom_ribbon(ymin=ggdata$se.inf,ymax=ggdata$se.sup,alpha=.25)+geom_errorbar(ymin=ggdata$se.inf,ymax=ggdata$se.sup,width=0,alpha=.25)+ geom_point() + geom_line() + ylim(min(ggdata$se.inf),max(ggdata$se.sup)) + labs(x="Years",y=paste(indicator," variation",sep="")) #####
+			gg <- ggplot(ggdata,aes(x=year,y=estimate))+ geom_ribbon(ymin=ggdata$se.inf,ymax=ggdata$se.sup,alpha=.25)+geom_errorbar(ymin=ggdata$se.inf,ymax=ggdata$se.sup,width=0,alpha=.25)+ geom_point() + geom_line() + ylim(min(ggdata$se.inf),max(ggdata$se.sup)) + labs(x="Years",y=paste(indicator," variation",sep="")) #####
 
             ggfile <- paste("Output/",indicator,id,".png",sep="")
             ggsave(ggfile,gg)
@@ -414,4 +424,4 @@ write.csv(ggdata,paste("Output/ggdata_",indicator,id,".csv",sep=""),row.names=FA
 ################## 
 ###  Do your analysis
 
-csi_cti_ctri(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait,dd=NULL,Var="ssi",indicator="csi",ic=TRUE,plot_smooth = TRUE,methode="lmer")  ##### exemple pour l'indicateur csi sans csi déjà calculé donc à partir du ssi avec interval de confiance et utilisant modele mixte / example for the csi index which is not already calculated from the ssi with confidence interval using the mixte model 
+csi_cti_ctri(tabCLEAN=tabCLEAN,coordCarre=coordCarre,spTrait=spTrait,dd=NULL,Var="ssi",indicator="csi",ic=TRUE,plot_smooth = TRUE,methode="lmer",init_1989 = FALSE)  ##### exemple pour l'indicateur csi sans csi déjà calculé donc à partir du ssi avec interval de confiance et utilisant modele mixte / example for the csi index which is not already calculated from the ssi with confidence interval using the mixte model 
