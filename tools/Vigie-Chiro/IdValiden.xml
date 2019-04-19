@@ -4,7 +4,7 @@
         <import>vigiechiro_macros.xml</import>
     </macros>
     <requirements>
-        <requirement type="package" version="1.11.4">r-data.table</requirement>
+        <expand macro="vigiechiro_r-data.table_requirement"/>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
         Rscript '$__tool_directory__/IdValid_tool-ecology.R' 

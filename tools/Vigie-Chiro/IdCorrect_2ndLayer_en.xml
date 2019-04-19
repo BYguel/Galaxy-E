@@ -2,9 +2,9 @@
     <description>clean data from animal detection on acoustic recordings</description>
     <macros>
         <import>vigiechiro_macros.xml</import>
-   </macros>
-   <requirements>
-        <requirement type="package" version="1.10.4">r-data.table</requirement>
+    </macros>
+    <requirements>
+        <expand macro="vigiechiro_r-data.table_requirement"/>
         <requirement type="package" version="4.6_12">r-randomforest</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
