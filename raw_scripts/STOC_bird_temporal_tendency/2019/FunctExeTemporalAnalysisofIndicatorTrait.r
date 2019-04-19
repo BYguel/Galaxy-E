@@ -273,7 +273,7 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
 
            tabgamm$ic_low95<-tabgamm$coef+1.96*as.vector(tabgamm$se)
 
-    }
+    
 #    browser()
          ## The ggplot:
             gg <- ggplot(data=tabgamm,aes(x=annee,y=coef))
@@ -288,7 +288,7 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
     write.csv(tabgamm,paste("Output/",indicator,"_gammPlot_",id,".csv",sep=""),row.names=FALSE) ####
         cat("\n  --> Output/",indicator,"_gammPlot_",id,".csv\n",sep="")
 
-
+}###### CROCHET deplacer apres le dernier ggplot ici mais dans version Romain CROCHET placé AVANT le dernier ggplot qui n'était pas dans la condition if(init_1989)
 
 
 }
@@ -311,9 +311,9 @@ if(plot_smooth) {   #### Representation graphique de l'evolution annuelle des in
             # gammc.sim <- sim(gammc)######################  VERSION ROMAIN mais fct sim() marche pas avec Gamm / old version using function sim() but did not work with Gamm models
             # ic_inf_sim <- c(0,tail(apply(coef(gammc.sim), 2, quantile,.025),pasdetemps))
             # ic_sup_sim <- c(0,tail(apply(coef(gammc.sim), 2, quantile,.975),pasdetemps))
-			icalpha05 <<- as.data.frame(confint(gammc$gam))[2,1:2]  ########## VERSION BENJ
-			ic_inf_sim2 <- icalpha05[,1]
-			ic_sup_sim2 <- icalpha05[,2]
+			icalpha052 <- as.data.frame(confint(gammc$gam))[2,1:2]  ########## VERSION BENJ
+			ic_inf_sim2 <- icalpha052[,1]
+			ic_sup_sim2 <- icalpha052[,2]
         } else
         {
             ic_inf_sim2 <- "not assessed"
