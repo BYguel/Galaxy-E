@@ -1,0 +1,68 @@
+<macros>
+  <xml name="wclim_res">
+      <param name="usr_res" type="select" label="Resolution" help="In minutes of a degree.">
+          <option value="2.5">2.5</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+      </param>
+  </xml>
+
+  <xml name="wclim_plot">
+      <conditional name="condi_plot">
+          <param name="plot" type="select" label="Return a layers visualisation">
+              <option value="yes_plot">Yes</option>
+              <option value="no_plot">No</option>
+          </param>
+          <when value="yes_plot">
+              <param name="var_to_plot" type="select" label="Select what you want to visualize" help="Be careful to select a layer that is present in the dowloaded raster. eg : bioclimatic variable (bio) and layer bio:Isothermality.">
+                  <yield/>
+              </param>
+              <param name="usr_country" type="select" label="Select a worldmap vision or a more precise region" >
+                  <option value="WM">Worldmap</option>
+                  <option value="NA">North America</option>
+                  <option value="EU">Europe</option>
+                  <option value="AUS">Australia</option>
+                  <option value="FRA">France</option>
+                  <option value="DEU">Germany</option>
+                  <option value="GBR">United Kingdom</option>
+                  <option value="ESP">Spain</option>
+                  <option value="ITA">Italy</option>
+              </param>
+          </when>
+          <when value="no_plot">
+          </when>
+      </conditional>
+  </xml>
+
+  <xml name="wclim_tmin_tmax_prec">
+      <option value="1">January data</option>
+      <option value="2">February data</option>
+      <option value="3">March data</option>
+      <option value="4">April data</option>
+      <option value="5">May data</option>
+      <option value="6">June data</option>
+      <option value="7">July data</option>
+      <option value="8">August data</option>
+      <option value="9">September data</option>
+      <option value="10">October data</option>
+      <option value="11">November data</option>
+      <option value="12">December data</option>
+  </xml>
+
+  <xml name="wclim_citation">
+      <citations>
+          <citation type="bibtex">
+@article{article,
+author = {Fick, Steve and Hijmans, Robert},
+year = {2017},
+month = {05},
+pages = {},
+title = {WorldClim 2: New 1-km spatial resolution climate surfaces for global land areas},
+journal = {International Journal of Climatology},
+doi = {10.1002/joc.5086}
+}
+          </citation>
+      </citations>
+  </xml>
+
+</macros>
